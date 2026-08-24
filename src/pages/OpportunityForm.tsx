@@ -65,7 +65,7 @@ export default function OpportunityForm() {
       }
       navigate('/opportunities')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save')
+      setError(err instanceof Error ? err.message : JSON.stringify(err))
     } finally {
       setSaving(false)
     }
