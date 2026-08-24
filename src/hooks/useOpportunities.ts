@@ -23,12 +23,9 @@ export function useOpportunities() {
   }, [])
 
   const addOpportunity = async (opp: Omit<Opportunity, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
-    
     const { data, error } = await supabase
       .from('opportunities')
-      .insert({ ...opp, user_id: user.id })
+      .insert(opp)
       .select()
       .single()
     
