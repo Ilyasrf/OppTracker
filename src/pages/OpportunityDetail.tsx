@@ -73,7 +73,7 @@ export default function OpportunityDetail() {
       </div>
 
       <div className="rounded-xl border border-dark-border bg-dark-card p-6 backdrop-blur-sm">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
           <div>
             <p className="text-xs font-medium text-gray-500">Status</p>
             <div className="mt-1"><StatusBadge status={opp.status} /></div>
@@ -86,6 +86,10 @@ export default function OpportunityDetail() {
                 {days <= 0 ? 'Passed' : `${days} days left`}
               </p>
             )}
+          </div>
+          <div>
+            <p className="text-xs font-medium text-gray-500">Applied</p>
+            <p className="mt-1 text-sm text-white">{formatDate(opp.applied_date)}</p>
           </div>
           <div>
             <p className="text-xs font-medium text-gray-500">Funding</p>

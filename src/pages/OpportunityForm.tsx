@@ -20,6 +20,7 @@ export default function OpportunityForm() {
     travel_accommodation: '',
     category: 'other' as Category,
     notes: '',
+    applied_date: '',
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -38,6 +39,7 @@ export default function OpportunityForm() {
           travel_accommodation: opp.travel_accommodation || '',
           category: opp.category,
           notes: opp.notes || '',
+          applied_date: opp.applied_date ? new Date(opp.applied_date).toISOString().slice(0, 16) : '',
         })
       }
     }
@@ -56,6 +58,7 @@ export default function OpportunityForm() {
         location: form.location || null,
         travel_accommodation: form.travel_accommodation || null,
         notes: form.notes || null,
+        applied_date: form.applied_date ? new Date(form.applied_date).toISOString() : null,
       }
 
       if (isEditing && id) {
@@ -178,6 +181,16 @@ export default function OpportunityForm() {
                 onChange={e => setForm(f => ({ ...f, travel_accommodation: e.target.value }))}
                 className="w-full rounded-lg border border-dark-border bg-dark px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-accent/50"
                 placeholder="Flights + housing covered, $2000 stipend"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-300">Applied Date</label>
+              <input
+                type="datetime-local"
+                value={form.applied_date}
+                onChange={e => setForm(f => ({ ...f, applied_date: e.target.value }))}
+                className="w-full rounded-lg border border-dark-border bg-dark px-4 py-2.5 text-sm text-white outline-none focus:border-accent/50"
               />
             </div>
 
