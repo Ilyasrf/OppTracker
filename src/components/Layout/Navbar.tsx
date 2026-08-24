@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom'
 const navLinks = [
   { to: '/', label: 'Dashboard' },
   { to: '/opportunities', label: 'Opportunities' },
-  { to: '/scam-list', label: 'Scam List' },
 ]
 
 export default function Navbar() {
@@ -38,15 +37,6 @@ export default function Navbar() {
               ))}
             </div>
           </div>
-          <Link
-            to="/opportunities/new"
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-all hover:bg-accent/90 hover:shadow-lg hover:shadow-accent/20"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            New Opportunity
-          </Link>
         </div>
       </div>
     </nav>
