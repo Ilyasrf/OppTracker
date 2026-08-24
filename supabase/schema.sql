@@ -1,6 +1,6 @@
 CREATE TABLE opportunities (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id TEXT DEFAULT 'single-user',
   title TEXT NOT NULL,
   url TEXT,
   deadline TIMESTAMPTZ,
@@ -16,9 +16,10 @@ CREATE TABLE opportunities (
 
 ALTER TABLE opportunities ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can CRUD their own opportunities"
+CREATE POLICY "Allow all operations"
   ON opportunities FOR ALL
-  USING (auth.uid() = user_id);
+  USING (true)
+  WITH CHECK (true);
 
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
