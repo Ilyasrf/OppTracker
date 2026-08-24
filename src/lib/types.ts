@@ -9,7 +9,7 @@ export type OpportunityStatus =
 
 export type FundingType = 'fully_funded' | 'partial' | 'unpaid' | 'unknown'
 
-export type Category = 'fellowship' | 'internship' | 'hackathon' | 'volunteering' | 'other'
+export type Category = 'fellowship' | 'internship' | 'hackathon' | 'volunteering' | 'job' | 'forum' | 'other'
 
 export interface Opportunity {
   id: string
@@ -59,5 +59,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   internship: 'Internship',
   hackathon: 'Hackathon',
   volunteering: 'Volunteering',
+  job: 'Job',
+  forum: 'Forum',
   other: 'Other',
 }

@@ -8,7 +8,7 @@ CREATE TABLE opportunities (
   funding_type TEXT DEFAULT 'unknown' CHECK (funding_type IN ('fully_funded','partial','unpaid','unknown')),
   location TEXT,
   travel_accommodation TEXT,
-  category TEXT DEFAULT 'other' CHECK (category IN ('fellowship','internship','hackathon','volunteering','other')),
+  category TEXT DEFAULT 'other' CHECK (category IN ('fellowship','internship','hackathon','volunteering','job','forum','other')),
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
