@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 const navLinks = [
   { to: '/', label: 'Dashboard' },
   { to: '/opportunities', label: 'Opportunities' },
+  { to: '/ai-assistant', label: 'AI Assistant' },
 ]
 
 export default function Navbar() {
