@@ -10,6 +10,7 @@ CREATE TABLE opportunities (
   travel_accommodation TEXT,
   category TEXT DEFAULT 'other' CHECK (category IN ('fellowship','internship','hackathon','volunteering','job','forum','other')),
   notes TEXT,
+  applied_date TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
