@@ -5,6 +5,7 @@ import OpportunitiesList from './pages/OpportunitiesList'
 import OpportunityForm from './pages/OpportunityForm'
 import OpportunityDetail from './pages/OpportunityDetail'
 import ScamList from './pages/ScamList'
+import AiAssistant from './pages/AiAssistant'
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
           <Route path="/opportunities/:id/edit" element={<OpportunityForm />} />
           <Route path="/opportunities/:id" element={<OpportunityDetail />} />
           <Route path="/scam-list" element={<ScamList />} />
+          <Route path="/ai-assistant" element={<AiAssistant />} />
         </Route>
       </Routes>
     </BrowserRouter>
