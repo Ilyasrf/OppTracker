@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { geminiModel } from '../lib/gemini'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 import type { Opportunity, FundingType, Category } from '../lib/types'
 
 export interface ChatMessage {
@@ -39,14 +41,32 @@ export interface UserProfile {
   interests: string
 }
 
-function getProfile(): UserProfile {
-  const saved = localStorage.getItem('user_profile')
-  if (saved) return JSON.parse(saved)
+async function getProfile(userId: string | undefined): Promise<UserProfile> {
+  if (!userId) return { name: '', email: '', skills: '', background: '', interests: '' }
+  
+  const { data } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single()
+
+  if (data) {
+    return {
+      name: data.name || '',
+      email: data.email || '',
+      skills: data.skills || '',
+      background: data.background || '',
+      interests: data.interests || '',
+    }
+  }
   return { name: '', email: '', skills: '', background: '', interests: '' }
 }
 
-export function saveProfile(profile: UserProfile) {
-  localStorage.setItem('user_profile', JSON.stringify(profile))
+export async function saveProfile(userId: string | undefined, profile: UserProfile) {
+  if (!userId) return
+  await supabase
+    .from('profiles')
+    .upsert({ id: userId, ...profile })
 }
 
 function opportunitiesToContext(opportunities: Opportunity[]): string {
@@ -57,6 +77,7 @@ function opportunitiesToContext(opportunities: Opportunity[]): string {
 }
 
 export function useGemini() {
+  const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -104,7 +125,7 @@ Look for: application fees, unrealistic promises, vague descriptions, missing or
     setLoading(true)
     setError(null)
     try {
-      const profile = getProfile()
+      const profile = await getProfile(user?.id)
       const result = await geminiModel.generateContent(
         `Write a professional cover letter for the following opportunity. Use the applicant's profile and be specific to this opportunity.
 
@@ -182,7 +203,7 @@ Consider: application fees, vague requirements, unrealistic promises, missing or
     setLoading(true)
     setError(null)
     try {
-      const profile = getProfile()
+      const profile = await getProfile(user?.id)
       const context = opportunitiesToContext(opportunities)
       const historyText = history.slice(-10).map(m =>
         `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`

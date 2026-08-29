@@ -1,19 +1,40 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useGemini, saveProfile, type UserProfile } from '../../hooks/useGemini'
+import { useAuth } from '../../contexts/AuthContext'
+import { supabase } from '../../lib/supabase'
 import { useOpportunities } from '../../hooks/useOpportunities'
 import { FUNDING_LABELS, CATEGORY_LABELS } from '../../lib/types'
 
 export default function CoverLetterGenerator() {
+  const { user } = useAuth()
   const { loading, error, generateCoverLetter } = useGemini()
   const { opportunities } = useOpportunities()
   const [selectedId, setSelectedId] = useState('')
   const [extraContext, setExtraContext] = useState('')
   const [letter, setLetter] = useState('')
   const [showProfile, setShowProfile] = useState(false)
-  const [profile, setProfile] = useState<UserProfile>(() => {
-    const saved = localStorage.getItem('user_profile')
-    return saved ? JSON.parse(saved) : { name: '', email: '', skills: '', background: '', interests: '' }
-  })
+  const [profile, setProfile] = useState<UserProfile>({ name: '', email: '', skills: '', background: '', interests: '' })
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user) return
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      if (data) {
+        setProfile({
+          name: data.name || '',
+          email: data.email || user.email || '',
+          skills: data.skills || '',
+          background: data.background || '',
+          interests: data.interests || '',
+        })
+      }
+    }
+    loadProfile()
+  }, [user])
 
   const selected = opportunities.find(o => o.id === selectedId)
 
@@ -23,8 +44,8 @@ export default function CoverLetterGenerator() {
     if (result) setLetter(result)
   }
 
-  const handleSaveProfile = () => {
-    saveProfile(profile)
+  const handleSaveProfile = async () => {
+    await saveProfile(user?.id, profile)
     setShowProfile(false)
   }
 
