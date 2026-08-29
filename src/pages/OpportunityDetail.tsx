@@ -25,8 +25,10 @@ export default function OpportunityDetail() {
 
   const handleDelete = async () => {
     if (window.confirm(`Delete "${opp.title}"?`)) {
-      await deleteOpportunity(opp.id)
-      navigate('/opportunities')
+      const result = await deleteOpportunity(opp.id)
+      if (!result?.error) {
+        navigate('/opportunities')
+      }
     }
   }
 

@@ -50,28 +50,29 @@ export default function OpportunityForm() {
     setSaving(true)
     setError(null)
 
-    try {
-      const oppData = {
-        ...form,
-        url: form.url || null,
-        deadline: form.deadline ? new Date(form.deadline).toISOString() : null,
-        location: form.location || null,
-        travel_accommodation: form.travel_accommodation || null,
-        notes: form.notes || null,
-        applied_date: form.applied_date ? new Date(form.applied_date).toISOString() : null,
-      }
-
-      if (isEditing && id) {
-        await updateOpportunity(id, oppData)
-      } else {
-        await addOpportunity(oppData)
-      }
-      navigate('/opportunities')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : JSON.stringify(err))
-    } finally {
-      setSaving(false)
+    const oppData = {
+      ...form,
+      url: form.url || null,
+      deadline: form.deadline ? new Date(form.deadline).toISOString() : null,
+      location: form.location || null,
+      travel_accommodation: form.travel_accommodation || null,
+      notes: form.notes || null,
+      applied_date: form.applied_date ? new Date(form.applied_date).toISOString() : null,
     }
+
+    let result
+    if (isEditing && id) {
+      result = await updateOpportunity(id, oppData)
+    } else {
+      result = await addOpportunity(oppData)
+    }
+
+    if (result?.error) {
+      setError(result.error)
+    } else {
+      navigate('/opportunities')
+    }
+    setSaving(false)
   }
 
   return (

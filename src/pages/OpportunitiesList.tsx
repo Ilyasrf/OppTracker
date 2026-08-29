@@ -24,7 +24,10 @@ export default function OpportunitiesList() {
 
   const handleDelete = async (id: string, title: string) => {
     if (window.confirm(`Delete "${title}"?`)) {
-      await deleteOpportunity(id)
+      const result = await deleteOpportunity(id)
+      if (result?.error) {
+        console.error('Failed to delete:', result.error)
+      }
     }
   }
 
