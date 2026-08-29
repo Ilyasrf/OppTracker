@@ -10,7 +10,6 @@ import ScamList from './pages/ScamList'
 import AiAssistant from './pages/AiAssistant'
 import LoginPage from './pages/auth/LoginPage'
 import SignupPage from './pages/auth/SignupPage'
-import VerifyPage from './pages/auth/VerifyPage'
 import AuthCallback from './pages/auth/AuthCallback'
 
 export default function App() {
@@ -20,7 +19,6 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
-          <Route path="/verify" element={<VerifyPage />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route
             element={

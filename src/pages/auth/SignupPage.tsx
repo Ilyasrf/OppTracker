@@ -32,7 +32,7 @@ export default function SignupPage() {
       setError(result.error)
       setLoading(false)
     } else {
-      navigate('/verify')
+      navigate('/login')
     }
   }
 
