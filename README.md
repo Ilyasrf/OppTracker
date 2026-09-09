@@ -1,118 +1,105 @@
-# OppTracker
+<div align="center">
+  <img src="project_profile.png" alt="OppTracker Logo" width="150" height="150" />
 
-Track, manage, and analyze international opportunities — fellowships, internships, hackathons, and more. AI-powered scam detection, cover letter generation, and deadline tracking in one place.
+  # OppTracker
 
-## Features
+  **Never Lose Track of an Opportunity Again**
 
-- **Dashboard** — Real-time stats: total opportunities, upcoming deadlines, recent activity
-- **7-Stage Workflow** — Need to Apply → Applied → Under Review → Interview → Accepted/Rejected/Scam
-- **Search & Filter** — By status, funding type, category, and full-text search
-- **AI URL Analyzer** — Paste any opportunity URL and get instant extraction: deadline, funding, scam score (0–100), red/green flags
-- **Cover Letter Generator** — Personalized letters from your profile and opportunity details
-- **Scam Detector** — Fraud analysis with risk scoring and recommendations
-- **Smart Chat** — Conversational AI that knows your entire tracker
-- **Deadline Reminders** — Browser notifications 3 days before deadlines
-- **Scam Blacklist** — Flag and track fraudulent programs
+  *A smart, AI-powered platform to manage your applications for fellowships, internships, hackathons, and funded programs.*
 
-## Tech Stack
+  [**View Live Demo**](https://opp-tracker-eta.vercel.app/)
+</div>
 
-| Layer | Tech |
-|-------|------|
-| Frontend | React 19, TypeScript, Tailwind CSS 4 |
-| Build | Vite 8 |
-| Backend | Supabase (PostgreSQL, Row Level Security) |
-| AI | Google Gemini |
-| Deploy | Vercel |
+---
 
-## Getting Started
+## 🌟 The Problem & The Solution
+
+Every year, millions of people apply to various programs. The process is chaotic: opportunities are scattered, deadlines are missed, writing cover letters takes too much time, and scam programs steal time and money.
+
+**OppTracker solves all of this in one place.** It is a web-based opportunity management platform that helps you track, analyze, and apply to international programs with AI-powered assistance. It combines a clean dashboard with smart automation to turn a stressful process into a structured workflow.
+
+---
+
+## ✨ Core Features
+
+- **📊 Smart Dashboard:** A real-time overview of your application pipeline with upcoming deadlines and recent activity.
+- **📝 Full Opportunity Management:** Track every detail of each opportunity (Title, URL, Deadline, Status, Funding Type, Category, Location, etc.).
+- **🔄 Application Status Workflow:** A structured 7-stage pipeline: `Need to Apply` ➡️ `Applied` ➡️ `Under Review` ➡️ `Interview` ➡️ `Accepted` (or `Rejected` / `Scam`).
+- **🔍 Search and Filtering:** Find any opportunity instantly using text search or filters.
+- **🛡️ Scam Detection & Blacklist:** Protect yourself from fraudulent programs with AI-powered analysis and a dedicated Scam List.
+- **⏰ Deadline Reminders:** Automatic reminders scheduled before deadlines with color-coded countdown badges.
+
+---
+
+## 🤖 AI-Powered Tools
+
+OppTracker integrates **Google Gemini** to provide intelligent assistance:
+
+1. **URL Analyzer:** Paste any opportunity URL and the AI extracts details, requirements, and provides a scam score instantly.
+2. **Cover Letter Generator:** Generate personalized cover letters in seconds tailored to the specific opportunity and your profile.
+3. **Smart Chat Assistant:** A conversational AI that knows your entire tracker. Ask it for deadline summaries or which opportunities to prioritize!
+4. **Scam Detector:** Analyze any opportunity for fraud signals, red/green flags, and get a clear recommendation on whether to apply.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend:** React 19, TypeScript, Vite
+- **Routing:** React Router 7
+- **Styling:** Tailwind CSS 4
+- **Backend / Database:** Supabase (PostgreSQL)
+- **AI Integration:** Google Gemini
+- **Deployment:** Vercel
+
+---
+
+## 🚀 Getting Started
+
+To run OppTracker locally, follow these steps:
 
 ### Prerequisites
 
-- Node.js 18+
-- A [Supabase](https://supabase.com) account
-- A [Google AI](https://aistudio.google.com) API key
+- Node.js installed
+- A Supabase project
+- A Google Gemini API Key
 
-### Setup
+### Installation
 
-```bash
-git clone https://github.com/Ilyasrf/OppTracker.git
-cd OppTracker
-npm install
-```
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Ilyasrf/OppTracker.git
+   cd OppTracker
+   ```
 
-Create a `.env` file from the template:
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-```bash
-cp .env.example .env
-```
+3. **Environment Setup:**
+   Create a `.env` file in the root directory (you can copy `.env.example`) and add your variables:
+   ```env
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   VITE_GEMINI_API_KEY=your_gemini_api_key
+   ```
 
-Fill in your keys:
+4. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
 
-```
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-VITE_GEMINI_API_KEY=your-gemini-key
-```
+5. Open your browser and navigate to the local URL provided by Vite (usually `http://localhost:5173`).
 
-Set up the database — run `supabase/schema.sql` in the Supabase SQL Editor.
+---
 
-Start the dev server:
+## 🎨 Design Philosophy
 
-```bash
-npm run dev
-```
+- **Dark Theme:** Deep navy background with glass-morphism cards and subtle blue borders.
+- **Color-Coded Status:** Instant visual recognition for different application stages (e.g., Yellow for "Need to Apply", Green for "Accepted", Red for "Scam").
 
-### Deploy to Vercel
+---
 
-```bash
-npm i -g vercel
-vercel env add VITE_SUPABASE_URL
-vercel env add VITE_SUPABASE_ANON_KEY
-vercel env add VITE_GEMINI_API_KEY
-vercel --prod
-```
-
-Or connect the repo to Vercel dashboard — auto-deploys on push.
-
-## Project Structure
-
-```
-src/
-├── components/
-│   ├── ai/          # AI tool interfaces
-│   ├── Auth/        # Authentication components
-│   ├── Layout/      # Navbar, page wrapper
-│   └── ui/          # Stats cards, status badges
-├── hooks/
-│   ├── useOpportunities.ts
-│   └── useGemini.ts
-├── lib/
-│   ├── supabase.ts  # Client init
-│   ├── gemini.ts    # AI client
-│   ├── types.ts     # TypeScript types
-│   └── notifications.ts
-├── pages/
-│   ├── Dashboard.tsx
-│   ├── OpportunitiesList.tsx
-│   ├── OpportunityForm.tsx
-│   ├── OpportunityDetail.tsx
-│   ├── ScamList.tsx
-│   └── AiAssistant.tsx
-├── App.tsx
-└── main.tsx
-supabase/
-└── schema.sql       # Database schema + RLS policies
-```
-
-## Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Type-check and build for production |
-| `npm run preview` | Preview production build |
-| `npm run lint` | Run Oxlint |
-
-## Cost
-
-$0/month on free tiers — Vercel, Supabase, and Google Gemini all have free plans sufficient for personal use.
+<div align="center">
+  <i>Built with ❤️ by Ilyas</i>
+</div>
