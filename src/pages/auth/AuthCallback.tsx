@@ -6,13 +6,22 @@ export default function AuthCallback() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate('/')
-      } else {
-        navigate('/login')
-      }
-    })
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (session) {
+          navigate('/')
+        } else {
+          navigate('/login')
+        }
+      })
+      .catch(() =>
+        navigate('/login', {
+          state: {
+            message: 'Could not verify your session. Please sign in again.'
+          }
+        })
+      )
   }, [navigate])
 
   return (

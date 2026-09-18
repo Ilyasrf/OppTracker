@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 
 export default function LoginPage() {
@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const { signIn } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -29,11 +30,23 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-dark px-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <h1 className="font-mono text-3xl font-bold text-accent">OppTracker</h1>
-          <p className="mt-2 text-gray-400">Sign in to track your opportunities</p>
+          <h1 className="font-mono text-3xl font-bold text-accent">
+            OppTracker
+          </h1>
+          <p className="mt-2 text-gray-400">
+            Sign in to track your opportunities
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-dark-border bg-dark-card p-8 backdrop-blur-sm">
+        {location.state?.message && (
+          <p role="status" className="success-notice mb-4">
+            {location.state.message}
+          </p>
+        )}
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4 rounded-xl border border-dark-border bg-dark-card p-8 backdrop-blur-sm"
+        >
           {error && (
             <div className="rounded-lg bg-accent-red/10 px-4 py-3 text-sm text-accent-red">
               {error}
@@ -43,11 +56,12 @@ export default function LoginPage() {
           <div>
             <label className="mb-1 block text-sm text-gray-400">Email</label>
             <input
+              aria-label="Email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full rounded-lg border border-dark-border bg-dark px-4 py-3 text-white placeholder-gray-500 focus:border-accent focus:outline-none"
+              className="w-full rounded-lg border border-dark-border bg-dark px-4 py-3 text-ink placeholder-gray-500 focus:border-accent focus:outline-none"
               placeholder="you@example.com"
             />
           </div>
@@ -55,11 +69,12 @@ export default function LoginPage() {
           <div>
             <label className="mb-1 block text-sm text-gray-400">Password</label>
             <input
+              aria-label="Password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full rounded-lg border border-dark-border bg-dark px-4 py-3 text-white placeholder-gray-500 focus:border-accent focus:outline-none"
+              className="w-full rounded-lg border border-dark-border bg-dark px-4 py-3 text-ink placeholder-gray-500 focus:border-accent focus:outline-none"
               placeholder="••••••••"
             />
           </div>
@@ -67,14 +82,16 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-accent py-3 font-medium text-white transition hover:bg-accent/80 disabled:opacity-50"
+            className="w-full rounded-lg bg-accent py-3 font-medium text-paper transition hover:bg-accent/80 disabled:opacity-50"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
 
           <p className="text-center text-sm text-gray-400">
             Don't have an account?{' '}
-            <Link to="/signup" className="text-accent hover:underline">Sign up</Link>
+            <Link to="/signup" className="text-accent hover:underline">
+              Sign up
+            </Link>
           </p>
         </form>
       </div>

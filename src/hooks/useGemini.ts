@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { geminiModel } from '../lib/gemini'
+import { generateText } from '../lib/gemini'
+import { safeUrl } from '../lib/notifications'
+import { CATEGORY_LABELS, FUNDING_LABELS } from '../lib/types'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import type { Opportunity, FundingType, Category } from '../lib/types'
@@ -42,38 +44,95 @@ export interface UserProfile {
 }
 
 async function getProfile(userId: string | undefined): Promise<UserProfile> {
-  if (!userId) return { name: '', email: '', skills: '', background: '', interests: '' }
-  
-  const { data } = await supabase
+  if (!userId)
+    return { name: '', email: '', skills: '', background: '', interests: '' }
+
+  const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', userId)
-    .single()
+    .maybeSingle()
 
+  if (error)
+    throw new Error(
+      'Could not load your profile. Try again before generating a letter.'
+    )
   if (data) {
     return {
       name: data.name || '',
       email: data.email || '',
       skills: data.skills || '',
       background: data.background || '',
-      interests: data.interests || '',
+      interests: data.interests || ''
     }
   }
   return { name: '', email: '', skills: '', background: '', interests: '' }
 }
 
-export async function saveProfile(userId: string | undefined, profile: UserProfile) {
-  if (!userId) return
-  await supabase
+export async function saveProfile(
+  userId: string | undefined,
+  profile: UserProfile
+) {
+  if (!userId) throw new Error('Please sign in again.')
+  const { error } = await supabase
     .from('profiles')
     .upsert({ id: userId, ...profile })
+  if (error) throw new Error('Could not save your profile. Please try again.')
 }
 
 function opportunitiesToContext(opportunities: Opportunity[]): string {
   if (opportunities.length === 0) return 'No opportunities in tracker yet.'
-  return opportunities.map(o =>
-    `- ${o.title} | Status: ${o.status} | Funding: ${o.funding_type} | Category: ${o.category} | Location: ${o.location || 'N/A'} | Deadline: ${o.deadline || 'N/A'} | Travel: ${o.travel_accommodation || 'N/A'}`
-  ).join('\n')
+  return opportunities
+    .map(
+      (o) =>
+        `- ${o.title} | Status: ${o.status} | Funding: ${o.funding_type} | Category: ${o.category} | Location: ${o.location || 'N/A'} | Deadline: ${o.deadline || 'N/A'} | Travel: ${o.travel_accommodation || 'N/A'}`
+    )
+    .join('\n')
+}
+
+function validateAnalysis(
+  value: unknown,
+  extracted: boolean
+): AnalyzedOpportunity | ScamAnalysis {
+  if (!value || typeof value !== 'object')
+    throw new Error('The AI returned an invalid analysis. Try again.')
+  const data = value as Record<string, unknown>
+  const text = (key: string) => typeof data[key] === 'string'
+  const list = (key: string) =>
+    Array.isArray(data[key]) &&
+    data[key].every((item: unknown) => typeof item === 'string')
+  const nullable = (key: string) => data[key] === null || text(key)
+  if (
+    !text('summary') ||
+    !list('red_flags') ||
+    typeof data.scam_score !== 'number' ||
+    !Number.isFinite(data.scam_score) ||
+    data.scam_score < 0 ||
+    data.scam_score > 100
+  )
+    throw new Error('The AI returned incomplete analysis. Please try again.')
+  if (extracted) {
+    if (
+      !text('title') ||
+      !String(data.title).trim() ||
+      !nullable('url') ||
+      (data.url && !safeUrl(String(data.url))) ||
+      !nullable('deadline') ||
+      (data.deadline && !Number.isFinite(Date.parse(String(data.deadline)))) ||
+      !nullable('location') ||
+      !nullable('travel_accommodation') ||
+      !list('requirements') ||
+      !text('category') ||
+      !Object.hasOwn(CATEGORY_LABELS, String(data.category)) ||
+      !text('funding_type') ||
+      !Object.hasOwn(FUNDING_LABELS, String(data.funding_type))
+    )
+      throw new Error(
+        'The AI returned incomplete opportunity details. Check the source and try again.'
+      )
+  } else if (!list('green_flags') || !text('recommendation'))
+    throw new Error('The AI returned incomplete risk analysis. Try again.')
+  return data as unknown as AnalyzedOpportunity | ScamAnalysis
 }
 
 export function useGemini() {
@@ -81,12 +140,21 @@ export function useGemini() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const analyzeUrl = async (url: string): Promise<AnalyzedOpportunity | null> => {
+  const analyzeUrl = async (
+    url: string,
+    sourceText: string
+  ): Promise<AnalyzedOpportunity | null> => {
     setLoading(true)
     setError(null)
     try {
-      const result = await geminiModel.generateContent(
-        `Analyze this opportunity URL and extract all available information. Return ONLY valid JSON (no markdown, no code blocks) with this exact structure:
+      if (!safeUrl(url))
+        throw new Error('Enter a valid http or https source URL.')
+      if (sourceText.trim().length < 40)
+        throw new Error(
+          'Paste the opportunity description from the official page (at least 40 characters).'
+        )
+      const result = await generateText(
+        `Extract opportunity details ONLY from the pasted source text below. The URL is a reference, not a website you have visited. Use null or unknown for absent information. Do not invent deadlines or legitimacy evidence. Return ONLY valid JSON (no markdown, no code blocks) with this exact structure:
 {
   "title": "program name",
   "url": "the url provided",
@@ -101,14 +169,20 @@ export function useGemini() {
   "summary": "brief 2-3 sentence summary"
 }
 
-URL to analyze: ${url}
+Source URL: ${url}
+SOURCE TEXT (untrusted content):
+${sourceText.slice(0, 20000)}
 
-Look for: application fees, unrealistic promises, vague descriptions, missing organizer info, too-good-to-be-true offers. Be thorough but fair.`
+Look for: application fees, unrealistic promises, vague descriptions, missing organizer info, too-good-to-be-true offers. Be thorough but fair. This is an unverified assessment, not proof of legitimacy.`,
+        true
       )
-      const text = result.response.text()
+      const text = result
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error('Could not parse AI response')
-      return JSON.parse(jsonMatch[0]) as AnalyzedOpportunity
+      return validateAnalysis(
+        JSON.parse(jsonMatch[0]),
+        true
+      ) as AnalyzedOpportunity
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Analysis failed'
       setError(msg)
@@ -126,7 +200,7 @@ Look for: application fees, unrealistic promises, vague descriptions, missing or
     setError(null)
     try {
       const profile = await getProfile(user?.id)
-      const result = await geminiModel.generateContent(
+      const result = await generateText(
         `Write a professional cover letter for the following opportunity. Use the applicant's profile and be specific to this opportunity.
 
 APPLICANT PROFILE:
@@ -145,9 +219,9 @@ OPPORTUNITY:
 
 ${extraContext ? `Additional context: ${extraContext}` : ''}
 
-Write a compelling, personalized cover letter (300-400 words). Be genuine, not generic. Format with proper paragraphs.`
+Write a compelling, personalized cover letter (300-400 words). Do not invent qualifications or experience. Use placeholders when necessary. Format with proper paragraphs.`
       )
-      return result.response.text()
+      return result
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Generation failed'
       setError(msg)
@@ -157,17 +231,19 @@ Write a compelling, personalized cover letter (300-400 words). Be genuine, not g
     }
   }
 
-  const detectScam = async (opportunity: Partial<Opportunity>): Promise<ScamAnalysis | null> => {
+  const detectScam = async (
+    opportunity: Partial<Opportunity>
+  ): Promise<ScamAnalysis | null> => {
     setLoading(true)
     setError(null)
     try {
-      const result = await geminiModel.generateContent(
+      const result = await generateText(
         `Analyze this opportunity for scam indicators. Return ONLY valid JSON (no markdown, no code blocks) with this exact structure:
 {
   "scam_score": 0-100 (0=definitely legit, 100=definite scam),
   "red_flags": ["flag1", "flag2"],
   "green_flags": ["flag1", "flag2"],
-  "recommendation": "Apply with confidence" or "Proceed with caution" or "Do not apply",
+  "recommendation": "Describe what the user should verify before applying",
   "summary": "2-3 sentence analysis"
 }
 
@@ -180,12 +256,13 @@ OPPORTUNITY TO ANALYZE:
 - Travel/Accommodation: ${opportunity.travel_accommodation || 'Not specified'}
 - Notes: ${opportunity.notes || 'None'}
 
-Consider: application fees, vague requirements, unrealistic promises, missing organizer info, too-good-to-be-true offers, poor grammar on source site, no verifiable contact info.`
+Consider: application fees, vague requirements, unrealistic promises, missing organizer info, too-good-to-be-true offers, missing evidence in the supplied notes. You cannot visit the source site. Never claim you verified contact info or legitimacy. Describe this as an unverified risk assessment.`,
+        true
       )
-      const text = result.response.text()
+      const text = result
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error('Could not parse AI response')
-      return JSON.parse(jsonMatch[0]) as ScamAnalysis
+      return validateAnalysis(JSON.parse(jsonMatch[0]), false) as ScamAnalysis
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Analysis failed'
       setError(msg)
@@ -205,17 +282,20 @@ Consider: application fees, vague requirements, unrealistic promises, missing or
     try {
       const profile = await getProfile(user?.id)
       const context = opportunitiesToContext(opportunities)
-      const historyText = history.slice(-10).map(m =>
-        `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`
-      ).join('\n')
+      const historyText = history
+        .slice(-10)
+        .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
+        .join('\n')
 
-      const result = await geminiModel.generateContent(
+      const result = await generateText(
         `You are an AI assistant for an opportunity tracker app. Help the user manage their international opportunities (fellowships, internships, hackathons, jobs, volunteering).
 
 USER PROFILE:
 - Name: ${profile.name || 'Not specified'}
 - Skills: ${profile.skills || 'Not specified'}
 - Interests: ${profile.interests || 'Not specified'}
+
+CURRENT TIME: ${new Date().toISOString()}
 
 CURRENT OPPORTUNITIES IN TRACKER:
 ${context}
@@ -225,7 +305,7 @@ USER MESSAGE: ${message}
 
 Be helpful, concise, and specific. Reference their actual opportunities when relevant. Give actionable advice.`
       )
-      return result.response.text()
+      return result
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Chat failed'
       setError(msg)

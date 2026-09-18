@@ -32,7 +32,12 @@ export default function SignupPage() {
       setError(result.error)
       setLoading(false)
     } else {
-      navigate('/login')
+      navigate('/login', {
+        state: {
+          message:
+            'Account request received. If email confirmation is enabled, check your inbox before signing in.'
+        }
+      })
     }
   }
 
@@ -40,11 +45,16 @@ export default function SignupPage() {
     <div className="flex min-h-screen items-center justify-center bg-dark px-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <h1 className="font-mono text-3xl font-bold text-accent">OppTracker</h1>
+          <h1 className="font-mono text-3xl font-bold text-accent">
+            OppTracker
+          </h1>
           <p className="mt-2 text-gray-400">Create your account</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-dark-border bg-dark-card p-8 backdrop-blur-sm">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4 rounded-xl border border-dark-border bg-dark-card p-8 backdrop-blur-sm"
+        >
           {error && (
             <div className="rounded-lg bg-accent-red/10 px-4 py-3 text-sm text-accent-red">
               {error}
@@ -54,11 +64,12 @@ export default function SignupPage() {
           <div>
             <label className="mb-1 block text-sm text-gray-400">Email</label>
             <input
+              aria-label="Email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full rounded-lg border border-dark-border bg-dark px-4 py-3 text-white placeholder-gray-500 focus:border-accent focus:outline-none"
+              className="w-full rounded-lg border border-dark-border bg-dark px-4 py-3 text-ink placeholder-gray-500 focus:border-accent focus:outline-none"
               placeholder="you@example.com"
             />
           </div>
@@ -66,23 +77,27 @@ export default function SignupPage() {
           <div>
             <label className="mb-1 block text-sm text-gray-400">Password</label>
             <input
+              aria-label="Password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full rounded-lg border border-dark-border bg-dark px-4 py-3 text-white placeholder-gray-500 focus:border-accent focus:outline-none"
+              className="w-full rounded-lg border border-dark-border bg-dark px-4 py-3 text-ink placeholder-gray-500 focus:border-accent focus:outline-none"
               placeholder="••••••••"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm text-gray-400">Confirm Password</label>
+            <label className="mb-1 block text-sm text-gray-400">
+              Confirm Password
+            </label>
             <input
+              aria-label="Confirm Password"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              className="w-full rounded-lg border border-dark-border bg-dark px-4 py-3 text-white placeholder-gray-500 focus:border-accent focus:outline-none"
+              className="w-full rounded-lg border border-dark-border bg-dark px-4 py-3 text-ink placeholder-gray-500 focus:border-accent focus:outline-none"
               placeholder="••••••••"
             />
           </div>
@@ -90,14 +105,16 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-accent py-3 font-medium text-white transition hover:bg-accent/80 disabled:opacity-50"
+            className="w-full rounded-lg bg-accent py-3 font-medium text-paper transition hover:bg-accent/80 disabled:opacity-50"
           >
             {loading ? 'Creating account...' : 'Sign Up'}
           </button>
 
           <p className="text-center text-sm text-gray-400">
             Already have an account?{' '}
-            <Link to="/login" className="text-accent hover:underline">Sign in</Link>
+            <Link to="/login" className="text-accent hover:underline">
+              Sign in
+            </Link>
           </p>
         </form>
       </div>

@@ -20,13 +20,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        setSession(session)
+        setUser(session?.user ?? null)
+        setLoading(false)
+      })
+      .catch(() => {
+        setSession(null)
+        setUser(null)
+        setLoading(false)
+      })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
@@ -36,23 +45,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password })
-    if (error) return { error: error.message }
-    return {}
+    try {
+      const { error } = await supabase.auth.signUp({ email, password })
+      return error ? { error: error.message } : {}
+    } catch {
+      return { error: 'Could not connect. Please try again.' }
+    }
   }
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) return { error: error.message }
-    return {}
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+      return error ? { error: error.message } : {}
+    } catch {
+      return { error: 'Could not connect. Please try again.' }
+    }
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut()
+    if (error) throw error
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider
+      value={{ user, session, loading, signUp, signIn, signOut }}
+    >
       {children}
     </AuthContext.Provider>
   )

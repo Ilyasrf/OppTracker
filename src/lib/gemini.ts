@@ -1,20 +1,32 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { supabase } from './supabase'
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY
-
-if (!apiKey) {
-  console.warn(
-    '⚠️ Gemini API key not configured. Add VITE_GEMINI_API_KEY to your .env file.\n' +
-    'Get a free key at: https://aistudio.google.com/apikey'
-  )
+export async function generateText(
+  prompt: string,
+  json = false
+): Promise<string> {
+  const { data, error } = await supabase.auth.getSession()
+  if (error || !data.session)
+    throw new Error('Please sign in again to use your assistant.')
+  const response = await fetch('/api/ai', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${data.session.access_token}`
+    },
+    body: JSON.stringify({ prompt, json }),
+    signal: AbortSignal.timeout(55000)
+  })
+  if (!response.headers.get('content-type')?.includes('application/json'))
+    throw new Error(
+      'The AI service is unavailable. Check the server setup and try again.'
+    )
+  const result = await response.json()
+  if (!response.ok)
+    throw new Error(
+      result.error ||
+        'The assistant could not complete this request. Try again.'
+    )
+  if (typeof result.text !== 'string' || !result.text.trim())
+    throw new Error('The assistant returned an empty response. Try again.')
+  return result.text
 }
-
-export const genAI = new GoogleGenerativeAI(apiKey || '')
-
-export const geminiModel = genAI.getGenerativeModel({
-  model: 'gemini-3.6-flash',
-  generationConfig: {
-    temperature: 0.7,
-    maxOutputTokens: 2048,
-  },
-})

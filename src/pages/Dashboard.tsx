@@ -1,160 +1,234 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useOpportunities } from '../hooks/useOpportunities'
-import StatsCard from '../components/ui/StatsCard'
 import StatusBadge from '../components/ui/StatusBadge'
-import { daysUntilDeadline, formatDate } from '../lib/notifications'
+import LoadState from '../components/ui/LoadState'
+import {
+  calendarFile,
+  deadlineLabel,
+  downloadFile,
+  formatDateTime,
+  pendingDeadlines
+} from '../lib/notifications'
 
 export default function Dashboard() {
-  const { opportunities, loading } = useOpportunities()
-
-  const stats = {
-    total: opportunities.length,
-    needToApply: opportunities.filter(o => o.status === 'need_to_apply').length,
-    applied: opportunities.filter(o => o.status === 'applied').length,
-    underReview: opportunities.filter(o => o.status === 'under_review').length,
-    interview: opportunities.filter(o => o.status === 'interview').length,
-    accepted: opportunities.filter(o => o.status === 'accepted').length,
-    rejected: opportunities.filter(o => o.status === 'rejected').length,
-  }
-
-  const upcomingDeadlines = opportunities
-    .filter(o => o.deadline && o.status !== 'rejected' && o.status !== 'scam')
-    .sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime())
-    .slice(0, 5)
-
-  const recentAdditions = [...opportunities]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 5)
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-      </div>
-    )
-  }
+  const { opportunities, loading, error, refetch } = useOpportunities()
+  const [now, setNow] = useState(Date.now())
+  const [calendarSaved, setCalendarSaved] = useState(false)
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60000)
+    return () => clearInterval(timer)
+  }, [])
+  const { upcoming, overdue } = pendingDeadlines(opportunities, now)
+  const next = upcoming[0]
+  const waiting = opportunities.filter((o) =>
+    ['applied', 'under_review'].includes(o.status)
+  ).length
+  const interviews = opportunities.filter(
+    (o) => o.status === 'interview'
+  ).length
+  const recent = [...opportunities]
+    .sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at))
+    .slice(0, 4)
+  if (loading || error)
+    return <LoadState loading={loading} error={error} retry={refetch} />
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-        <p className="mt-1 text-gray-400">Track your international opportunities</p>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <StatsCard
-          label="Total"
-          value={stats.total}
-          color="text-white"
-          icon={
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-          }
-        />
-        <StatsCard
-          label="Need to Apply"
-          value={stats.needToApply}
-          color="text-yellow-400"
-          icon={
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
-        />
-        <StatsCard
-          label="Applied"
-          value={stats.applied}
-          color="text-blue-400"
-          icon={
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
-        />
-        <StatsCard
-          label="Interviews"
-          value={stats.interview}
-          color="text-cyan-400"
-          icon={
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-          }
-        />
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Upcoming Deadlines */}
-        <div className="rounded-xl border border-dark-border bg-dark-card p-6 backdrop-blur-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-mono text-lg font-semibold text-white">Upcoming Deadlines</h2>
-            <Link to="/opportunities" className="text-sm text-accent hover:text-accent/80">
-              View all
-            </Link>
-          </div>
-          {upcomingDeadlines.length === 0 ? (
-            <p className="py-4 text-center text-gray-500">No upcoming deadlines</p>
-          ) : (
-            <div className="space-y-3">
-              {upcomingDeadlines.map(opp => {
-                const days = daysUntilDeadline(opp.deadline)
-                return (
-                  <Link
-                    key={opp.id}
-                    to={`/opportunities/${opp.id}`}
-                    className="flex items-center justify-between rounded-lg border border-dark-border bg-dark/50 p-3 transition-colors hover:border-accent/30"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-white">{opp.title}</p>
-                      <p className="text-xs text-gray-400">{formatDate(opp.deadline)}</p>
-                    </div>
-                    {days !== null && (
-                      <span className={`ml-4 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-mono ${
-                        days <= 3 ? 'bg-red-500/20 text-red-400' :
-                        days <= 7 ? 'bg-yellow-500/20 text-yellow-400' :
-                        'bg-green-500/20 text-green-400'
-                      }`}>
-                        {days <= 0 ? 'Passed' : `${days}d left`}
-                      </span>
-                    )}
-                  </Link>
-                )
-              })}
-            </div>
-          )}
+      <header className="page-heading">
+        <div>
+          <p className="eyebrow">YOUR PERSONAL OPPORTUNITY NOTEBOOK</p>
+          <h1>
+            Good things take <span className="marked">a little planning.</span>
+          </h1>
+          <p className="subtitle">
+            Keep the possibilities. Catch the deadlines.
+          </p>
         </div>
-
-        {/* Recent Activity */}
-        <div className="rounded-xl border border-dark-border bg-dark-card p-6 backdrop-blur-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-mono text-lg font-semibold text-white">Recent Activity</h2>
-            <Link to="/opportunities" className="text-sm text-accent hover:text-accent/80">
-              View all
-            </Link>
+        <Link className="button primary" to="/opportunities/new">
+          <span aria-hidden="true">＋</span> Add an opportunity
+        </Link>
+      </header>
+      <div className="dashboard-grid">
+        <section className="focus-card">
+          <div className="flex items-center justify-between gap-3">
+            <p className="eyebrow">UP NEXT / APPLICATION DEADLINE</p>
+            <span className="handwritten -rotate-6 text-2xl">
+              you've got this ↙
+            </span>
           </div>
-          {recentAdditions.length === 0 ? (
-            <p className="py-4 text-center text-gray-500">No opportunities yet</p>
-          ) : (
-            <div className="space-y-3">
-              {recentAdditions.map(opp => (
-                <Link
-                  key={opp.id}
-                  to={`/opportunities/${opp.id}`}
-                  className="flex items-center justify-between rounded-lg border border-dark-border bg-dark/50 p-3 transition-colors hover:border-accent/30"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-white">{opp.title}</p>
-                    <p className="text-xs text-gray-400">{opp.location || 'No location'}</p>
-                  </div>
-                  <StatusBadge status={opp.status} />
+          {next ? (
+            <>
+              <div className="deadline-stamp">
+                {deadlineLabel(next.deadline, now)}
+              </div>
+              <h2>{next.title}</h2>
+              <p className="mt-3 text-sm">
+                {formatDateTime(next.deadline)}
+                {next.location && ` · ${next.location}`}
+              </p>
+              <div className="mt-7 flex flex-wrap items-center gap-4">
+                <Link to={`/opportunities/${next.id}`} className="button ink">
+                  Open application <span aria-hidden="true">↗</span>
                 </Link>
-              ))}
+                <span className="text-sm">One step closer.</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 className="mt-8">
+                {opportunities.length
+                  ? 'A little breathing room.'
+                  : 'Your next chapter starts here.'}
+              </h2>
+              <p className="mt-3 max-w-md">
+                {opportunities.length
+                  ? 'No upcoming application deadlines. Check the items below or save your next possibility.'
+                  : 'Save a fellowship, internship, or job. Give it a deadline. Make it happen.'}
+              </p>
+              <Link to="/opportunities/new" className="button ink mt-7">
+                Save a possibility ↗
+              </Link>
+            </>
+          )}
+        </section>
+        <aside className="paper-panel snapshot">
+          <p className="eyebrow">THE BIG PICTURE</p>
+          <div className="snapshot-row">
+            <span>In your notebook</span>
+            <strong>{opportunities.length.toString().padStart(2, '0')}</strong>
+          </div>
+          <div className="snapshot-row">
+            <span>Still to apply</span>
+            <strong>
+              {opportunities
+                .filter((o) => o.status === 'need_to_apply')
+                .length.toString()
+                .padStart(2, '0')}
+            </strong>
+          </div>
+          <div className="snapshot-row">
+            <span>Waiting for a reply</span>
+            <strong>{waiting.toString().padStart(2, '0')}</strong>
+          </div>
+          <div className="snapshot-row">
+            <span>Interviews</span>
+            <strong>{interviews.toString().padStart(2, '0')}</strong>
+          </div>
+          <p className="handwritten mt-4 text-center text-2xl">
+            small steps, big possibilities.
+          </p>
+        </aside>
+      </div>
+      <div className="grid gap-7 lg:grid-cols-2">
+        <section className="paper-panel">
+          <div className="section-heading">
+            <h2>Coming up</h2>
+            <Link to="/opportunities?view=upcoming" className="text-link">
+              See all ↗
+            </Link>
+          </div>
+          <p className="mb-4 text-sm text-gray-500">
+            Applications still on your to-do list.
+          </p>
+          {upcoming.slice(0, 5).map((opp) => (
+            <Link
+              key={opp.id}
+              to={`/opportunities/${opp.id}`}
+              className="notebook-row"
+            >
+              <div>
+                <h3>{opp.title}</h3>
+                <p>{formatDateTime(opp.deadline)}</p>
+              </div>
+              <span
+                className={`deadline-pill ${Date.parse(opp.deadline!) - now < 3 * 86400000 ? 'urgent' : ''}`}
+              >
+                {deadlineLabel(opp.deadline, now)}
+              </span>
+            </Link>
+          ))}
+          {!upcoming.length && (
+            <p className="empty-note">
+              Nothing coming up yet. Add a deadline when you save an
+              opportunity.
+            </p>
+          )}
+          {upcoming.length > 0 && (
+            <div className="calendar-note">
+              <button
+                className="text-link"
+                onClick={() => {
+                  downloadFile(
+                    'opptracker-deadlines.ics',
+                    calendarFile(opportunities),
+                    'text/calendar'
+                  )
+                  setCalendarSaved(true)
+                }}
+              >
+                ↓ Add deadlines to my calendar
+              </button>
+              <p>
+                Import the file into your calendar and check its alerts.
+                Includes 3-day, 1-day, and 1-hour reminders. Export again when
+                deadlines change.
+              </p>
+              {calendarSaved && (
+                <p role="status">
+                  Calendar file downloaded. Import it into your preferred
+                  calendar to activate reminders.
+                </p>
+              )}
             </div>
           )}
-        </div>
+        </section>
+        <section className="paper-panel">
+          <div className="section-heading">
+            <h2>Recently updated</h2>
+            <span className="handwritten text-xl">the latest scribbles</span>
+          </div>
+          {recent.map((opp) => (
+            <Link
+              key={opp.id}
+              to={`/opportunities/${opp.id}`}
+              className="notebook-row"
+            >
+              <div>
+                <h3>{opp.title}</h3>
+                <p>{formatDateTime(opp.updated_at)}</p>
+              </div>
+              <StatusBadge status={opp.status} />
+            </Link>
+          ))}
+          {!recent.length && (
+            <p className="empty-note">
+              Your saved opportunities will appear here.
+            </p>
+          )}
+          <Link to="/opportunities" className="text-link mt-5 inline-block">
+            Open the whole notebook ↗
+          </Link>
+        </section>
       </div>
+      {overdue.length > 0 && (
+        <section className="overdue-panel">
+          <div>
+            <p className="eyebrow">NEEDS A SECOND LOOK</p>
+            <h2>
+              {overdue.length}{' '}
+              {overdue.length === 1 ? 'deadline has' : 'deadlines have'} passed
+            </h2>
+            <p className="mt-2 text-sm">
+              These are still marked “Need to apply.” Update the status if you
+              applied, or check whether the deadline was extended.
+            </p>
+          </div>
+          <Link className="button" to="/opportunities?view=overdue">
+            Review passed deadlines ↗
+          </Link>
+        </section>
+      )}
     </div>
   )
 }
