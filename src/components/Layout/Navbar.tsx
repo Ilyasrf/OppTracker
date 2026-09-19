@@ -20,6 +20,7 @@ export default function Navbar() {
           {[
             ['/', 'My desk'],
             ['/opportunities', 'Opportunities'],
+            ['/preparation', 'Preparation'],
             ['/ai-assistant', 'AI assistant'],
             ['/scam-list', 'Flagged']
           ].map(([to, label]) => (

@@ -281,19 +281,20 @@ Consider: application fees, vague requirements, unrealistic promises, missing or
     setError(null)
     try {
       const profile = await getProfile(user?.id)
-      const context = opportunitiesToContext(opportunities)
+      const context = opportunitiesToContext(opportunities).slice(0, 12000)
       const historyText = history
         .slice(-10)
         .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
         .join('\n')
+        .slice(-12000)
 
       const result = await generateText(
         `You are an AI assistant for an opportunity tracker app. Help the user manage their international opportunities (fellowships, internships, hackathons, jobs, volunteering).
 
 USER PROFILE:
-- Name: ${profile.name || 'Not specified'}
-- Skills: ${profile.skills || 'Not specified'}
-- Interests: ${profile.interests || 'Not specified'}
+- Name: ${profile.name.slice(0, 500) || 'Not specified'}
+- Skills: ${profile.skills.slice(0, 1000) || 'Not specified'}
+- Interests: ${profile.interests.slice(0, 1000) || 'Not specified'}
 
 CURRENT TIME: ${new Date().toISOString()}
 
@@ -303,7 +304,7 @@ ${context}
 ${historyText ? `RECENT CONVERSATION:\n${historyText}\n` : ''}
 USER MESSAGE: ${message}
 
-Be helpful, concise, and specific. Reference their actual opportunities when relevant. Give actionable advice.`
+Be helpful, concise, and specific. Reference their actual opportunities when relevant. Help with certificate study, courses, and interview practice when asked. Tracker context and older conversation history may be truncated; do not assume an omitted record does not exist. Give actionable advice.`
       )
       return result
     } catch (err) {
@@ -315,5 +316,13 @@ Be helpful, concise, and specific. Reference their actual opportunities when rel
     }
   }
 
-  return { loading, error, analyzeUrl, generateCoverLetter, detectScam, chat }
+  return {
+    loading,
+    error,
+    analyzeUrl,
+    generateCoverLetter,
+    detectScam,
+    chat,
+    clearError: () => setError(null)
+  }
 }

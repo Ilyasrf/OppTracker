@@ -10,6 +10,7 @@ import OpportunityDetail from './pages/OpportunityDetail'
 import ScamList from './pages/ScamList'
 import { lazy, Suspense } from 'react'
 const AiAssistant = lazy(() => import('./pages/AiAssistant'))
+const Preparation = lazy(() => import('./pages/Preparation'))
 import LoginPage from './pages/auth/LoginPage'
 import SignupPage from './pages/auth/SignupPage'
 import AuthCallback from './pages/auth/AuthCallback'
@@ -48,6 +49,14 @@ export default function App() {
               element={<OpportunityForm />}
             />
             <Route path="/opportunities/:id" element={<OpportunityDetail />} />
+            <Route
+              path="/preparation"
+              element={
+                <Suspense fallback={<p role="status">Opening preparation…</p>}>
+                  <Preparation />
+                </Suspense>
+              }
+            />
             <Route path="/scam-list" element={<ScamList />} />
             <Route
               path="*"

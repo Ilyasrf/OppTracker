@@ -1,154 +1,417 @@
 import { useState, useRef, useEffect } from 'react'
-import { useGemini, type ChatMessage } from '../../hooks/useGemini'
+import { useLocation } from 'react-router-dom'
+import { useGemini } from '../../hooks/useGemini'
 import { useOpportunities } from '../../hooks/useOpportunities'
+import { useNotebook, type NotebookRow } from '../../hooks/useNotebook'
+import { useAuth } from '../../contexts/AuthContext'
+import { downloadFile } from '../../lib/notifications'
 import ChatMessageComponent from './ChatMessage'
 
+interface Conversation extends NotebookRow {
+  title: string
+  messages: {
+    id: string
+    role: 'user' | 'assistant'
+    content: string
+    timestamp: string
+  }[]
+}
+
 export default function SmartChat() {
-  const { loading, error, chat } = useGemini()
-  const { opportunities } = useOpportunities()
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [input, setInput] = useState('')
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const { user } = useAuth()
+  const location = useLocation()
+  const { error: aiError, chat, clearError } = useGemini()
+  const {
+    opportunities,
+    loading: opportunitiesLoading,
+    error: opportunitiesError
+  } = useOpportunities()
+  const { rows, loading, error, refresh, save } =
+    useNotebook<Conversation>('ai_conversations')
+  const [active, setActive] = useState<Conversation | null>(null)
+  const [pending, setPending] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [saveError, setSaveError] = useState('')
+  const [input, setInput] = useState(
+    typeof location.state?.prompt === 'string'
+      ? location.state.prompt.slice(0, 10000)
+      : ''
+  )
+  const [search, setSearch] = useState('')
+  const lock = useRef(false)
+  const end = useRef<HTMLDivElement>(null)
+  const recoveryKey = `opptracker-chat-draft:${user?.id}`
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
-  const handleSend = async () => {
-    const text = input.trim()
-    if (!text || loading) return
-
-    const userMsg: ChatMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: text,
-      timestamp: new Date()
-    }
-
-    setMessages((prev) => [...prev, userMsg])
-    setInput('')
-
-    const reply = await chat(text, opportunities, messages)
-    if (reply) {
-      const aiMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: reply,
-        timestamp: new Date()
+    try {
+      const stored = sessionStorage.getItem(recoveryKey)
+      if (stored) {
+        const draft = JSON.parse(stored) as Conversation
+        if (draft.user_id === user?.id && Array.isArray(draft.messages)) {
+          setActive(draft)
+          setPending(true)
+          setSaveError(
+            'Recovered an unsaved conversation. Retry saving or export it before leaving.'
+          )
+        }
       }
-      setMessages((prev) => [...prev, aiMsg])
+    } catch {
+      setSaveError(
+        'Could not restore the unsaved conversation from this browser.'
+      )
+    }
+  }, [recoveryKey, user?.id])
+
+  useEffect(() => {
+    end.current?.scrollIntoView({ behavior: 'instant', block: 'nearest' })
+  }, [active?.messages.length])
+  useEffect(() => {
+    if (!pending && !busy) return
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault()
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [pending, busy])
+
+  async function persist(draft: Conversation) {
+    setActive(draft)
+    setPending(true)
+    try {
+      sessionStorage.setItem(recoveryKey, JSON.stringify(draft))
+    } catch {
+      /* The visible draft remains available for export. */
+    }
+    const saved = await save(draft)
+    setActive(saved)
+    setPending(false)
+    try {
+      sessionStorage.removeItem(recoveryKey)
+    } catch {
+      /* Storage can be disabled. */
+    }
+    return saved
+  }
+
+  async function send(retry = false) {
+    if (
+      lock.current ||
+      !user ||
+      loading ||
+      error ||
+      pending ||
+      opportunitiesLoading ||
+      opportunitiesError
+    )
+      return
+    const text = retry ? active?.messages.at(-1)?.content : input.trim()
+    if (!text || (active?.messages.length || 0) >= (retry ? 200 : 199)) return
+    lock.current = true
+    setBusy(true)
+    setSaveError('')
+    try {
+      let current = active || {
+        id: crypto.randomUUID(),
+        user_id: user.id,
+        updated_at: '',
+        title: Array.from(text).slice(0, 120).join(''),
+        messages: []
+      }
+      if (!retry) {
+        current = await persist({
+          ...current,
+          messages: [
+            ...current.messages,
+            {
+              id: crypto.randomUUID(),
+              role: 'user',
+              content: text,
+              timestamp: new Date().toISOString()
+            }
+          ]
+        })
+        setInput('')
+      }
+      const history = current.messages.slice(0, -1).map((message) => ({
+        ...message,
+        timestamp: new Date(message.timestamp)
+      }))
+      const reply = await chat(text, opportunities, history)
+      if (reply)
+        await persist({
+          ...current,
+          messages: [
+            ...current.messages,
+            {
+              id: crypto.randomUUID(),
+              role: 'assistant',
+              content: reply,
+              timestamp: new Date().toISOString()
+            }
+          ]
+        })
+    } catch (err) {
+      setSaveError(
+        err instanceof Error ? err.message : 'Could not save this conversation.'
+      )
+    } finally {
+      lock.current = false
+      setBusy(false)
     }
   }
 
-  const suggestions = [
-    'What fully funded opportunities do I have?',
-    'Which deadlines are coming up soon?',
-    'What should I apply to next?',
-    'Summarize my application status'
-  ]
-
+  const messages = active?.messages || []
+  const needsReply = messages.at(-1)?.role === 'user'
   return (
-    <div className="flex flex-col h-[60vh]">
-      <div className="mb-4">
-        <h3 className="font-mono text-lg font-semibold text-ink">Smart Chat</h3>
-        <p className="mt-1 text-sm text-gray-400">
-          Ask anything about your opportunities
-        </p>
-      </div>
-
-      {messages.length === 0 && (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center space-y-4">
-            <div className="flex h-16 w-16 mx-auto items-center justify-center rounded-2xl bg-accent/10">
-              <svg
-                className="h-8 w-8 text-accent"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+    <div className="notebook-workspace">
+      <aside
+        className="paper-panel notebook-sidebar"
+        aria-label="Conversation history"
+      >
+        <div className="section-heading">
+          <h2>Conversations</h2>
+          <span className="handwritten text-2xl">↙ saved here</span>
+        </div>
+        <button
+          className="button primary w-full"
+          disabled={busy || pending}
+          onClick={() => {
+            setActive(null)
+            setInput('')
+            setSaveError('')
+            clearError()
+          }}
+        >
+          + New chat
+        </button>
+        <label className="block mt-5">
+          Search conversations
+          <input
+            className="w-full mt-2"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            type="search"
+          />
+        </label>
+        {loading && (
+          <p role="status" className="subtitle">
+            Loading history…
+          </p>
+        )}
+        {error && (
+          <div className="error-notice mt-4" role="alert">
+            {error}
+            <button
+              className="text-link block mt-2"
+              onClick={() => void refresh()}
+            >
+              Retry history
+            </button>
+          </div>
+        )}
+        {!loading && !error && !rows.length && (
+          <p className="empty-note">
+            Your first conversation starts a new page.
+          </p>
+        )}
+        <div className="conversation-list">
+          {rows
+            .filter((row) =>
+              row.title.toLowerCase().includes(search.toLowerCase())
+            )
+            .map((row) => (
+              <button
+                key={row.id}
+                className={`conversation-item ${active?.id === row.id ? 'selected' : ''}`}
+                disabled={busy || pending}
+                aria-pressed={active?.id === row.id}
+                onClick={() => {
+                  setActive(row)
+                  setInput('')
+                  setSaveError('')
+                  clearError()
+                }}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                />
-              </svg>
-            </div>
-            <p className="text-gray-400">
-              Ask me anything about your opportunities
+                <strong>{row.title}</strong>
+                <span>
+                  {new Date(row.updated_at).toLocaleDateString()} ·{' '}
+                  {row.messages.length} messages
+                </span>
+              </button>
+            ))}
+        </div>
+        <p className="field-hint">
+          Saved to your account across devices. Each conversation holds up to
+          200 messages (2 MB); the assistant uses the latest 10 for context.
+        </p>
+      </aside>
+      <section className="paper-panel chat-workspace" aria-label="Smart Chat">
+        <div className="section-heading">
+          <h2>{active?.title || 'A fresh page.'}</h2>
+          {active && (
+            <button
+              className="text-link"
+              onClick={() =>
+                downloadFile(
+                  'opptracker-conversation.json',
+                  JSON.stringify(active, null, 2),
+                  'application/json'
+                )
+              }
+            >
+              Export chat
+            </button>
+          )}
+        </div>
+        {!messages.length && (
+          <div className="empty-note">
+            <p className="handwritten text-4xl">What’s your next step?</p>
+            <p className="mt-4">
+              Talk through an application, study plan, or interview.
             </p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {suggestions.map((s, i) => (
+            <div className="flex flex-wrap justify-center gap-2 mt-5">
+              {[
+                'Which deadlines are coming up soon?',
+                'Help me prepare for a job interview',
+                'Help me plan my certificate study'
+              ].map((text) => (
                 <button
-                  key={i}
-                  onClick={() => {
-                    setInput(s)
-                  }}
-                  className="rounded-lg border border-dark-border px-3 py-1.5 text-xs text-gray-400 transition-colors hover:border-accent/30 hover:text-ink"
+                  key={text}
+                  className="filter-tab"
+                  onClick={() => setInput(text)}
                 >
-                  {s}
+                  {text}
                 </button>
               ))}
             </div>
           </div>
-        </div>
-      )}
-
-      <div className="flex-1 overflow-y-auto pr-2 space-y-1">
-        {messages.map((msg) => (
-          <ChatMessageComponent
-            key={msg.id}
-            role={msg.role}
-            content={msg.content}
-            timestamp={msg.timestamp}
-          />
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {error && (
-        <div className="mt-2 rounded-lg bg-red-500/10 border border-red-500/20 p-2 text-xs text-red-400">
-          {error}
-        </div>
-      )}
-
-      <div className="mt-4 flex gap-2">
-        <input
-          aria-label="Message to your assistant"
-          maxLength={10000}
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-          placeholder="Ask about your opportunities..."
-          disabled={loading}
-          className="flex-1 rounded-lg border border-dark-border bg-dark-card px-4 py-2.5 text-sm text-ink placeholder-gray-500 outline-none focus:border-accent/50 disabled:opacity-50"
-        />
-        <button
-          aria-label="Send message"
-          onClick={handleSend}
-          disabled={loading || !input.trim()}
-          className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-paper transition-all hover:bg-accent/90 disabled:opacity-50"
-        >
-          {loading ? (
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-ink border-t-transparent" />
-          ) : (
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-              />
-            </svg>
+        )}
+        <div className="chat-scroll" aria-live="polite">
+          {messages.map((message) => (
+            <ChatMessageComponent
+              key={message.id}
+              role={message.role}
+              content={message.content}
+              timestamp={new Date(message.timestamp)}
+            />
+          ))}
+          {busy && (
+            <p role="status" className="subtitle">
+              Saving / thinking…
+            </p>
           )}
-        </button>
-      </div>
+          <div ref={end} />
+        </div>
+        {(saveError || aiError || opportunitiesError) && (
+          <div role="alert" className="error-notice">
+            {saveError || aiError || opportunitiesError}
+          </div>
+        )}
+        {pending && (
+          <button
+            className="button mt-3"
+            disabled={busy}
+            onClick={async () => {
+              if (!active || lock.current) return
+              lock.current = true
+              setBusy(true)
+              setSaveError('')
+              try {
+                await persist(active)
+                setInput('')
+              } catch (err) {
+                setSaveError(
+                  err instanceof Error ? err.message : 'Could not save.'
+                )
+              } finally {
+                lock.current = false
+                setBusy(false)
+              }
+            }}
+          >
+            Retry saving conversation
+          </button>
+        )}
+        {pending && (
+          <button
+            className="text-link mt-3 self-start"
+            disabled={busy}
+            onClick={() => {
+              if (
+                !window.confirm(
+                  'Discard the unsaved draft and reload saved conversations? Export the chat first if you want to keep this draft.'
+                )
+              )
+                return
+              try {
+                sessionStorage.removeItem(recoveryKey)
+              } catch {
+                /* Storage may be disabled. */
+              }
+              setPending(false)
+              setActive(null)
+              setInput('')
+              setSaveError('')
+              void refresh()
+            }}
+          >
+            Discard draft & reload saved history
+          </button>
+        )}
+        {needsReply && !pending && (
+          <button
+            className="text-link mt-3 self-start"
+            disabled={busy || loading || !!error}
+            onClick={() => void send(true)}
+          >
+            Get a reply to the last message
+          </button>
+        )}
+        {messages.length >= 200 && (
+          <p className="field-hint">
+            This page is full. Start a new chat to continue; this history stays
+            saved.
+          </p>
+        )}
+        <form
+          className="flex gap-2 mt-4"
+          onSubmit={(e) => {
+            e.preventDefault()
+            void send()
+          }}
+        >
+          <input
+            className="min-w-0 flex-1"
+            aria-label="Message to your assistant"
+            maxLength={10000}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask, plan, prepare…"
+            disabled={busy || pending}
+          />
+          <button
+            className="button primary"
+            aria-label="Send message"
+            disabled={
+              busy ||
+              pending ||
+              loading ||
+              !!error ||
+              opportunitiesLoading ||
+              !!opportunitiesError ||
+              !input.trim() ||
+              messages.length >= 199
+            }
+          >
+            Send ↗
+          </button>
+        </form>
+        <p className="field-hint">
+          {pending
+            ? 'Unsaved draft — retry saving before leaving.'
+            : active
+              ? 'Conversation saved to your account.'
+              : 'Your conversation is saved when you send a message.'}
+        </p>
+      </section>
     </div>
   )
 }
