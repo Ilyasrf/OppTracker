@@ -18,6 +18,12 @@ Built with React, TypeScript, Vite, Supabase Auth/Postgres, and Vercel.
 - Preparation edits and chat messages awaiting a successful save are kept in this tab’s session storage, scoped to your account, for recovery after navigation/reload. This is not a backup: closing the tab, clearing browser data, or blocked storage can lose unsaved drafts. Save or export before leaving; the UI reports failures and offers recovery. Other AI panels retain drafts only while mounted.
 - Concurrent edits use a server timestamp check. A stale tab cannot overwrite a newer plan or conversation. Export an unsaved draft, then reload the saved version to resolve a conflict.
 
+## Authentication
+
+Login, signup, and confirmation use the existing Supabase Auth project and account data. The screens share the notebook design, support password managers and password visibility, and return you to the protected page you opened before signing in. Signup handles both email confirmation and immediate sessions according to your existing Supabase settings. Failed or expired callback links show a sign-in recovery message. No provider settings, existing passwords, users, or sessions are reset by this release.
+
+Run `python tests/auth_smoke.py` against the same dummy Vite endpoint documented below to test login/signup/confirmation, sign-out (including remote revocation failure), protected redirects, external redirect rejection, and desktop/mobile layout without creating real accounts or sending emails.
+
 ## Local development
 
 Node.js 22.18+ is recommended. Copy `.env.example` to `.env.local`, then configure your Supabase URL and public/anon key. Never use a service-role key in the browser.
