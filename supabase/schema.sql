@@ -1,13 +1,11 @@
--- Drop existing policies and trigger
-DROP POLICY IF EXISTS "Allow all operations" ON opportunities;
-DROP TRIGGER IF EXISTS opportunities_updated_at ON opportunities;
-DROP FUNCTION IF EXISTS update_updated_at();
-
--- Recreate the table with proper user_id
--- IMPORTANT: Run the migration script first to preserve existing data
--- See migrations/001_add_auth.sql
-
-DROP TABLE IF EXISTS opportunities;
+-- Fresh database setup ONLY. Never reset a production database.
+-- This guard runs before any DDL and refuses to modify existing tracker tables.
+BEGIN;
+DO $$ BEGIN
+  IF to_regclass('public.opportunities') IS NOT NULL OR to_regclass('public.profiles') IS NOT NULL THEN
+    RAISE EXCEPTION 'Tracker tables already exist. No changes made. Use a reviewed additive migration after a verified backup.';
+  END IF;
+END $$;
 
 CREATE TABLE opportunities (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -99,9 +97,11 @@ BEGIN
   VALUES (NEW.id, NEW.email);
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION handle_new_user();
+
+COMMIT;

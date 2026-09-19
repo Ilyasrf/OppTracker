@@ -1,163 +1,264 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useOpportunities } from '../hooks/useOpportunities'
 import StatusBadge from '../components/ui/StatusBadge'
-import { formatDate, daysUntilDeadline } from '../lib/notifications'
-import type { OpportunityStatus, FundingType, Category } from '../lib/types'
+import LoadState from '../components/ui/LoadState'
+import {
+  formatDateTime,
+  deadlineLabel,
+  downloadFile,
+  calendarFile
+} from '../lib/notifications'
 import { STATUS_LABELS, FUNDING_LABELS, CATEGORY_LABELS } from '../lib/types'
 
 export default function OpportunitiesList() {
-  const { opportunities, loading, deleteOpportunity } = useOpportunities()
+  const { opportunities, loading, error, refetch } = useOpportunities()
+  const [params, setParams] = useSearchParams()
+  const view = params.get('view') || 'all'
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<OpportunityStatus | 'all'>('all')
-  const [fundingFilter, setFundingFilter] = useState<FundingType | 'all'>('all')
-  const [categoryFilter, setCategoryFilter] = useState<Category | 'all'>('all')
-
-  const filtered = opportunities.filter(opp => {
-    const matchesSearch = opp.title.toLowerCase().includes(search.toLowerCase()) ||
-      opp.location?.toLowerCase().includes(search.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || opp.status === statusFilter
-    const matchesFunding = fundingFilter === 'all' || opp.funding_type === fundingFilter
-    const matchesCategory = categoryFilter === 'all' || opp.category === categoryFilter
-    return matchesSearch && matchesStatus && matchesFunding && matchesCategory
-  })
-
-  const handleDelete = async (id: string, title: string) => {
-    if (window.confirm(`Delete "${title}"?`)) {
-      const result = await deleteOpportunity(id)
-      if (result?.error) {
-        console.error('Failed to delete:', result.error)
-      }
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-      </div>
+  const [status, setStatus] = useState('all')
+  const [funding, setFunding] = useState('all')
+  const [category, setCategory] = useState('all')
+  const [sort, setSort] = useState('deadline')
+  const [notice, setNotice] = useState('')
+  const now = Date.now()
+  const filtered = opportunities
+    .filter((o) => {
+      const matchesView =
+        view === 'all' ||
+        (o.status === 'need_to_apply' &&
+          o.deadline &&
+          (view === 'overdue'
+            ? Date.parse(o.deadline) <= now
+            : Date.parse(o.deadline) > now))
+      return (
+        matchesView &&
+        `${o.title} ${o.location || ''} ${o.notes || ''}`
+          .toLowerCase()
+          .includes(search.trim().toLowerCase()) &&
+        (status === 'all' || o.status === status) &&
+        (funding === 'all' || o.funding_type === funding) &&
+        (category === 'all' || o.category === category)
+      )
+    })
+    .sort((a, b) =>
+      sort === 'updated'
+        ? Date.parse(b.updated_at) - Date.parse(a.updated_at)
+        : sort === 'title'
+          ? a.title.localeCompare(b.title)
+          : (a.deadline ? Date.parse(a.deadline) : Infinity) -
+            (b.deadline ? Date.parse(b.deadline) : Infinity)
     )
-  }
-
+  if (loading || error)
+    return <LoadState loading={loading} error={error} retry={refetch} />
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <header className="page-heading">
         <div>
-          <h1 className="text-3xl font-bold text-white">Opportunities</h1>
-          <p className="mt-1 text-gray-400">{opportunities.length} total opportunities</p>
+          <p className="eyebrow">ALL YOUR POSSIBILITIES, IN ONE PLACE</p>
+          <h1>
+            The opportunity <span className="marked">notebook.</span>
+          </h1>
+          <p className="subtitle">
+            {opportunities.length} saved · {filtered.length} in this view
+          </p>
         </div>
-        <Link
-          to="/opportunities/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-all hover:bg-accent/90"
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Add New
+        <Link className="button primary" to="/opportunities/new">
+          ＋ Add an opportunity
         </Link>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <input
-          type="text"
-          placeholder="Search opportunities..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="rounded-lg border border-dark-border bg-dark-card px-4 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-accent/50"
-        />
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value as OpportunityStatus | 'all')}
-          className="rounded-lg border border-dark-border bg-dark-card px-4 py-2 text-sm text-white outline-none focus:border-accent/50"
-        >
-          <option value="all">All Status</option>
-          {Object.entries(STATUS_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
-        </select>
-        <select
-          value={fundingFilter}
-          onChange={e => setFundingFilter(e.target.value as FundingType | 'all')}
-          className="rounded-lg border border-dark-border bg-dark-card px-4 py-2 text-sm text-white outline-none focus:border-accent/50"
-        >
-          <option value="all">All Funding</option>
-          {Object.entries(FUNDING_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
-        </select>
-        <select
-          value={categoryFilter}
-          onChange={e => setCategoryFilter(e.target.value as Category | 'all')}
-          className="rounded-lg border border-dark-border bg-dark-card px-4 py-2 text-sm text-white outline-none focus:border-accent/50"
-        >
-          <option value="all">All Categories</option>
-          {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* List */}
-      {filtered.length === 0 ? (
-        <div className="rounded-xl border border-dark-border bg-dark-card p-12 text-center backdrop-blur-sm">
-          <p className="text-gray-400">No opportunities found</p>
-          <Link to="/opportunities/new" className="mt-4 inline-block text-accent hover:text-accent/80">
-            Add your first opportunity
-          </Link>
+      </header>
+      <div className="flex flex-wrap items-center gap-3">
+        {['all', 'upcoming', 'overdue'].map((v) => (
+          <button
+            key={v}
+            className={`filter-tab ${view === v ? 'selected' : ''}`}
+            aria-pressed={view === v}
+            onClick={() => setParams(v === 'all' ? {} : { view: v })}
+          >
+            {v === 'all'
+              ? 'All opportunities'
+              : v === 'upcoming'
+                ? 'Coming up'
+                : 'Deadline passed'}
+          </button>
+        ))}
+        <div className="ml-auto flex flex-wrap gap-3">
+          <button
+            className="text-link"
+            disabled={!opportunities.length}
+            onClick={() => {
+              downloadFile(
+                `opptracker-backup-${new Date().toISOString().slice(0, 10)}.json`,
+                JSON.stringify(
+                  {
+                    version: 1,
+                    exported_at: new Date().toISOString(),
+                    opportunities
+                  },
+                  null,
+                  2
+                ),
+                'application/json'
+              )
+              setNotice(
+                `Exported all ${opportunities.length} opportunities. Store the file somewhere safe.`
+              )
+            }}
+          >
+            ↓ Export backup
+          </button>
+          <button
+            className="text-link"
+            disabled={
+              !opportunities.some(
+                (o) =>
+                  o.status === 'need_to_apply' &&
+                  o.deadline &&
+                  Date.parse(o.deadline) > now
+              )
+            }
+            onClick={() => {
+              downloadFile(
+                'opptracker-deadlines.ics',
+                calendarFile(opportunities),
+                'text/calendar'
+              )
+              setNotice(
+                'Import the downloaded file into your calendar, then check its reminder settings. Export again after changing deadlines.'
+              )
+            }}
+          >
+            ↓ Calendar
+          </button>
         </div>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map(opp => {
-            const days = daysUntilDeadline(opp.deadline)
-            return (
-              <div
-                key={opp.id}
-                className="group flex items-center justify-between rounded-xl border border-dark-border bg-dark-card p-4 backdrop-blur-sm transition-all hover:border-accent/30"
-              >
-                <Link to={`/opportunities/${opp.id}`} className="min-w-0 flex-1">
-                  <div className="flex items-center gap-3">
-                    <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-sm font-medium text-white group-hover:text-accent">
-                        {opp.title}
-                      </h3>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-400">
-                        {opp.location && <span>{opp.location}</span>}
-                        {opp.location && <span>·</span>}
-                        <span>{CATEGORY_LABELS[opp.category]}</span>
-                        <span>·</span>
-                        <span>{FUNDING_LABELS[opp.funding_type]}</span>
-                        {opp.deadline && (
-                          <>
-                            <span>·</span>
-                            <span className={days !== null && days <= 3 ? 'text-red-400' : ''}>
-                              Due {formatDate(opp.deadline)}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <StatusBadge status={opp.status} />
-                    {days !== null && days <= 7 && days > 0 && (
-                      <span className="hidden rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs font-mono text-yellow-400 sm:inline">
-                        {days}d left
-                      </span>
-                    )}
-                  </div>
-                </Link>
-                <button
-                  onClick={() => handleDelete(opp.id, opp.title)}
-                  className="ml-4 rounded-lg p-2 text-gray-500 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </div>
-            )
-          })}
-        </div>
+      </div>
+      {notice && (
+        <p role="status" className="success-notice">
+          {notice}
+        </p>
       )}
+      <div className="filter-bar">
+        <label className="search-field">
+          Search
+          <input
+            type="search"
+            placeholder="Title, place, or notes…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </label>
+        <label>
+          Status
+          <select value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="all">Any status</option>
+            {Object.entries(STATUS_LABELS).map(([v, l]) => (
+              <option key={v} value={v}>
+                {l}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Funding
+          <select value={funding} onChange={(e) => setFunding(e.target.value)}>
+            <option value="all">Any funding</option>
+            {Object.entries(FUNDING_LABELS).map(([v, l]) => (
+              <option key={v} value={v}>
+                {l}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Category
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <option value="all">Any category</option>
+            {Object.entries(CATEGORY_LABELS).map(([v, l]) => (
+              <option key={v} value={v}>
+                {l}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Sort by
+          <select value={sort} onChange={(e) => setSort(e.target.value)}>
+            <option value="deadline">Deadline</option>
+            <option value="updated">Recently updated</option>
+            <option value="title">Title</option>
+          </select>
+        </label>
+      </div>
+      <div className="paper-panel opportunity-list">
+        {filtered.length ? (
+          filtered.map((o) => (
+            <Link
+              key={o.id}
+              to={`/opportunities/${o.id}`}
+              className="opportunity-row"
+            >
+              <div className="opportunity-info">
+                <span className="eyebrow">
+                  {CATEGORY_LABELS[o.category]} ·{' '}
+                  {FUNDING_LABELS[o.funding_type]}
+                </span>
+                <h2>{o.title}</h2>
+                <p>
+                  {o.location || 'Location not set'} ·{' '}
+                  {formatDateTime(o.deadline)}
+                </p>
+              </div>
+              <div className="opportunity-meta">
+                <StatusBadge status={o.status} />
+                {o.status === 'need_to_apply' && (
+                  <span
+                    className={`deadline-pill ${o.deadline && Date.parse(o.deadline) - now < 3 * 86400000 ? 'urgent' : ''}`}
+                  >
+                    {deadlineLabel(o.deadline)}
+                  </span>
+                )}
+              </div>
+              <span className="row-arrow" aria-hidden="true">
+                ↗
+              </span>
+            </Link>
+          ))
+        ) : (
+          <div className="empty-note">
+            <h2>
+              {opportunities.length
+                ? 'No matches on this page.'
+                : 'Start with one possibility.'}
+            </h2>
+            <p>
+              {opportunities.length
+                ? 'Try another search or clear your filters.'
+                : 'Save a link and deadline to start your notebook.'}
+            </p>
+            {opportunities.length ? (
+              <button
+                className="text-link mt-4"
+                onClick={() => {
+                  setSearch('')
+                  setStatus('all')
+                  setFunding('all')
+                  setCategory('all')
+                  setParams({})
+                }}
+              >
+                Clear filters
+              </button>
+            ) : (
+              <Link className="button primary mt-4" to="/opportunities/new">
+                Add your first opportunity
+              </Link>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

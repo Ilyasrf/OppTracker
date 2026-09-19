@@ -5,13 +5,13 @@ import ScamDetector from '../components/ai/ScamDetector'
 import SmartChat from '../components/ai/SmartChat'
 
 const tabs = [
-  { id: 'analyze', label: 'Analyze URL', icon: '🔍' },
+  { id: 'analyze', label: 'Capture a draft', icon: '🔍' },
   { id: 'cover', label: 'Cover Letter', icon: '📝' },
   { id: 'chat', label: 'Smart Chat', icon: '💬' },
-  { id: 'scam', label: 'Scam Detector', icon: '🛡️' },
+  { id: 'scam', label: 'Risk review', icon: '🛡️' }
 ] as const
 
-type TabId = typeof tabs[number]['id']
+type TabId = (typeof tabs)[number]['id']
 
 export default function AiAssistant() {
   const [activeTab, setActiveTab] = useState<TabId>('chat')
@@ -19,19 +19,25 @@ export default function AiAssistant() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-white">AI Assistant</h1>
-        <p className="mt-1 text-gray-400">Powered by Google Gemini</p>
+        <h1 className="text-3xl font-bold text-ink">
+          A little help with the next step.
+        </h1>
+        <p className="mt-1 text-gray-400">
+          Draft, think, and prepare with AI. Requests share the relevant
+          opportunity details and profile information with Google Gemini.
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {tabs.map(tab => (
+        {tabs.map((tab) => (
           <button
             key={tab.id}
+            aria-pressed={activeTab === tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
               activeTab === tab.id
-                ? 'bg-accent text-white shadow-lg shadow-accent/20'
-                : 'border border-dark-border bg-dark-card text-gray-400 hover:text-white hover:border-accent/30'
+                ? 'bg-accent text-paper shadow-lg shadow-accent/20'
+                : 'border border-dark-border bg-dark-card text-gray-400 hover:text-ink hover:border-accent/30'
             }`}
           >
             <span>{tab.icon}</span>
@@ -41,10 +47,18 @@ export default function AiAssistant() {
       </div>
 
       <div className="min-h-[400px]">
-        {activeTab === 'analyze' && <OpportunityAnalyzer />}
-        {activeTab === 'cover' && <CoverLetterGenerator />}
-        {activeTab === 'chat' && <SmartChat />}
-        {activeTab === 'scam' && <ScamDetector />}
+        <div hidden={activeTab !== 'analyze'}>
+          <OpportunityAnalyzer />
+        </div>
+        <div hidden={activeTab !== 'cover'}>
+          <CoverLetterGenerator />
+        </div>
+        <div hidden={activeTab !== 'chat'}>
+          <SmartChat />
+        </div>
+        <div hidden={activeTab !== 'scam'}>
+          <ScamDetector />
+        </div>
       </div>
     </div>
   )

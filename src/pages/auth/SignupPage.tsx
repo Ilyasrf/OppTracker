@@ -1,106 +1,114 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, type FormEvent } from 'react'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import AuthLayout, { PasswordField } from '../../components/Auth/AuthLayout'
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const { signUp } = useAuth()
+  const [busy, setBusy] = useState(false)
+  const { signUp, user, loading } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    if (busy) return
     setError('')
-
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
+      setError('Passwords do not match. Check both fields and try again.')
       return
     }
-
     if (password.length < 6) {
-      setError('Password must be at least 6 characters')
+      setError('Use a password with at least 6 characters.')
       return
     }
-
-    setLoading(true)
-    const result = await signUp(email, password)
+    setBusy(true)
+    const result = await signUp(email.trim(), password)
     if (result.error) {
       setError(result.error)
-      setLoading(false)
-    } else {
-      navigate('/login')
-    }
+      setBusy(false)
+    } else if (!result.signedIn)
+      navigate('/login', {
+        replace: true,
+        state: {
+          from: location.state?.from,
+          message:
+            'Account request received. Check your inbox if email confirmation is required, then sign in.'
+        }
+      })
   }
 
+  // Login owns return-path validation and sends active sessions straight to their destination.
+  if (!loading && user)
+    return (
+      <Navigate to="/login" state={{ from: location.state?.from }} replace />
+    )
   return (
-    <div className="flex min-h-screen items-center justify-center bg-dark px-4">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <h1 className="font-mono text-3xl font-bold text-accent">OppTracker</h1>
-          <p className="mt-2 text-gray-400">Create your account</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-dark-border bg-dark-card p-8 backdrop-blur-sm">
-          {error && (
-            <div className="rounded-lg bg-accent-red/10 px-4 py-3 text-sm text-accent-red">
-              {error}
-            </div>
-          )}
-
+    <AuthLayout
+      title="Start your notebook."
+      subtitle="Give your applications and preparation a place of their own."
+    >
+      <form
+        onSubmit={handleSubmit}
+        className="auth-form"
+        aria-busy={busy || loading}
+      >
+        {error && (
+          <p role="alert" className="error-notice">
+            {error}
+          </p>
+        )}
+        <fieldset disabled={busy || loading}>
           <div>
-            <label className="mb-1 block text-sm text-gray-400">Email</label>
+            <label htmlFor="signup-email">Email</label>
             <input
+              id="signup-email"
+              name="email"
               type="email"
+              autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
               required
-              className="w-full rounded-lg border border-dark-border bg-dark px-4 py-3 text-white placeholder-gray-500 focus:border-accent focus:outline-none"
               placeholder="you@example.com"
             />
           </div>
-
-          <div>
-            <label className="mb-1 block text-sm text-gray-400">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full rounded-lg border border-dark-border bg-dark px-4 py-3 text-white placeholder-gray-500 focus:border-accent focus:outline-none"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm text-gray-400">Confirm Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              className="w-full rounded-lg border border-dark-border bg-dark px-4 py-3 text-white placeholder-gray-500 focus:border-accent focus:outline-none"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-accent py-3 font-medium text-white transition hover:bg-accent/80 disabled:opacity-50"
-          >
-            {loading ? 'Creating account...' : 'Sign Up'}
+          <PasswordField
+            id="signup-password"
+            newPassword
+            value={password}
+            onChange={setPassword}
+          />
+          <PasswordField
+            id="confirm-password"
+            label="Confirm password"
+            newPassword
+            value={confirmPassword}
+            onChange={setConfirmPassword}
+          />
+          <button type="submit" className="button primary w-full">
+            {busy
+              ? 'Creating your account…'
+              : loading
+                ? 'Checking your session…'
+                : 'Create account ↗'}
           </button>
-
-          <p className="text-center text-sm text-gray-400">
-            Already have an account?{' '}
-            <Link to="/login" className="text-accent hover:underline">Sign in</Link>
-          </p>
-        </form>
-      </div>
-    </div>
+        </fieldset>
+        <p className="auth-switch">
+          Already have an account?{' '}
+          <Link
+            to="/login"
+            state={{ from: location.state?.from }}
+            className="text-link"
+          >
+            Sign in
+          </Link>
+        </p>
+      </form>
+    </AuthLayout>
   )
 }

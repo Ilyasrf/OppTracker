@@ -1,83 +1,106 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, type FormEvent } from 'react'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import AuthLayout, { PasswordField } from '../../components/Auth/AuthLayout'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const { signIn } = useAuth()
-  const navigate = useNavigate()
+  const [busy, setBusy] = useState(false)
+  const { signIn, user, loading, signOutWarning } = useAuth()
+  const location = useLocation()
+  const from = location.state?.from
+  // Only return to local application pages; never follow a supplied external URL.
+  const destination =
+    typeof from === 'string' &&
+    /^\/(?![/\\])/.test(from) &&
+    !from.includes('\\') &&
+    !/^\/(login|signup|auth)([/?#]|$)/.test(from)
+      ? from
+      : '/'
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    if (busy) return
     setError('')
-    setLoading(true)
-
-    const result = await signIn(email, password)
-    if (result.error) {
-      setError(result.error)
-      setLoading(false)
-    } else {
-      navigate('/')
-    }
+    setBusy(true)
+    const result = await signIn(email.trim(), password)
+    if (result.error) setError(result.error)
+    setBusy(false)
   }
 
+  if (!loading && user) return <Navigate to={destination} replace />
   return (
-    <div className="flex min-h-screen items-center justify-center bg-dark px-4">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <h1 className="font-mono text-3xl font-bold text-accent">OppTracker</h1>
-          <p className="mt-2 text-gray-400">Sign in to track your opportunities</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-dark-border bg-dark-card p-8 backdrop-blur-sm">
-          {error && (
-            <div className="rounded-lg bg-accent-red/10 px-4 py-3 text-sm text-accent-red">
-              {error}
-            </div>
-          )}
-
+    <AuthLayout
+      title="Welcome back."
+      subtitle="Sign in and pick up where you left off."
+    >
+      {signOutWarning && (
+        <p role="alert" className="error-notice mt-5">
+          {signOutWarning}
+        </p>
+      )}
+      {typeof location.state?.message === 'string' && (
+        <p role="status" className="success-notice mt-5">
+          {location.state.message}
+        </p>
+      )}
+      {typeof location.state?.error === 'string' && (
+        <p role="alert" className="error-notice mt-5">
+          {location.state.error}
+        </p>
+      )}
+      <form
+        onSubmit={handleSubmit}
+        className="auth-form"
+        aria-busy={busy || loading}
+      >
+        {error && (
+          <p role="alert" className="error-notice">
+            {error}
+          </p>
+        )}
+        <fieldset disabled={busy || loading}>
           <div>
-            <label className="mb-1 block text-sm text-gray-400">Email</label>
+            <label htmlFor="login-email">Email</label>
             <input
+              id="login-email"
+              name="email"
               type="email"
+              autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
               required
-              className="w-full rounded-lg border border-dark-border bg-dark px-4 py-3 text-white placeholder-gray-500 focus:border-accent focus:outline-none"
               placeholder="you@example.com"
             />
           </div>
-
-          <div>
-            <label className="mb-1 block text-sm text-gray-400">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full rounded-lg border border-dark-border bg-dark px-4 py-3 text-white placeholder-gray-500 focus:border-accent focus:outline-none"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-accent py-3 font-medium text-white transition hover:bg-accent/80 disabled:opacity-50"
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
+          <PasswordField
+            id="login-password"
+            value={password}
+            onChange={setPassword}
+          />
+          <button type="submit" className="button primary w-full">
+            {busy
+              ? 'Signing in…'
+              : loading
+                ? 'Checking your session…'
+                : 'Sign in ↗'}
           </button>
-
-          <p className="text-center text-sm text-gray-400">
-            Don't have an account?{' '}
-            <Link to="/signup" className="text-accent hover:underline">Sign up</Link>
-          </p>
-        </form>
-      </div>
-    </div>
+        </fieldset>
+        <p className="auth-switch">
+          New to OppTracker?{' '}
+          <Link
+            to="/signup"
+            state={{ from: destination }}
+            className="text-link"
+          >
+            Create an account
+          </Link>
+        </p>
+      </form>
+    </AuthLayout>
   )
 }

@@ -1,157 +1,206 @@
+import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useOpportunities } from '../hooks/useOpportunities'
 import StatusBadge from '../components/ui/StatusBadge'
-import { formatDate, daysUntilDeadline } from '../lib/notifications'
-import { FUNDING_LABELS, CATEGORY_LABELS, type OpportunityStatus } from '../lib/types'
+import LoadState from '../components/ui/LoadState'
+import {
+  formatDateTime,
+  deadlineLabel,
+  safeUrl,
+  calendarFile,
+  downloadFile
+} from '../lib/notifications'
+import {
+  FUNDING_LABELS,
+  CATEGORY_LABELS,
+  STATUS_LABELS,
+  type OpportunityStatus
+} from '../lib/types'
 
 export default function OpportunityDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { opportunities, deleteOpportunity, updateOpportunity } = useOpportunities()
-  const opp = opportunities.find(o => o.id === id)
-
-  if (!opp) {
+  const {
+    opportunities,
+    loading,
+    error,
+    refetch,
+    deleteOpportunity,
+    updateOpportunity
+  } = useOpportunities()
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState('')
+  const [actionError, setActionError] = useState('')
+  const opp = opportunities.find((o) => o.id === id)
+  if (loading || error)
+    return <LoadState loading={loading} error={error} retry={refetch} />
+  if (!opp)
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <p className="text-gray-400">Opportunity not found</p>
-        <Link to="/opportunities" className="mt-4 text-accent hover:text-accent/80">
-          Back to list
+      <div className="paper-panel">
+        <h1>Opportunity not found</h1>
+        <Link className="text-link" to="/opportunities">
+          Back to your notebook
         </Link>
       </div>
     )
+  const source = safeUrl(opp.url)
+  const changeStatus = async (status: OpportunityStatus) => {
+    setBusy(true)
+    setActionError('')
+    setMessage('')
+    const result = await updateOpportunity(opp.id, { status })
+    if (result.error) setActionError(result.error)
+    else setMessage('Status saved.')
+    setBusy(false)
   }
-
-  const days = daysUntilDeadline(opp.deadline)
-
-  const handleDelete = async () => {
-    if (window.confirm(`Delete "${opp.title}"?`)) {
-      const result = await deleteOpportunity(opp.id)
-      if (!result?.error) {
-        navigate('/opportunities')
-      }
-    }
-  }
-
-  const handleStatusChange = async (newStatus: typeof opp.status) => {
-    await updateOpportunity(opp.id, { status: newStatus })
-  }
-
-  const nextStatuses: OpportunityStatus[] = (() => {
-    switch (opp.status) {
-      case 'need_to_apply': return ['applied', 'scam']
-      case 'applied': return ['under_review', 'rejected']
-      case 'under_review': return ['interview', 'rejected']
-      case 'interview': return ['accepted', 'rejected']
-      default: return []
-    }
-  })()
-
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div className="flex items-start justify-between">
+    <div className="mx-auto max-w-4xl space-y-6">
+      <Link className="text-link" to="/opportunities">
+        ← Back to your notebook
+      </Link>
+      <header className="page-heading">
         <div>
-          <Link to="/opportunities" className="mb-2 inline-flex items-center gap-1 text-sm text-gray-400 hover:text-white">
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back
-          </Link>
-          <h1 className="mt-2 text-3xl font-bold text-white">{opp.title}</h1>
+          <p className="eyebrow">
+            {CATEGORY_LABELS[opp.category]} /{' '}
+            {opp.location || 'LOCATION NOT SET'}
+          </p>
+          <h1 className="detail-title">{opp.title}</h1>
         </div>
-        <div className="flex gap-2">
-          <Link
-            to={`/opportunities/${opp.id}/edit`}
-            className="rounded-lg border border-dark-border px-3 py-2 text-sm text-gray-400 hover:text-white"
+        <Link className="button" to={`/opportunities/${opp.id}/edit`}>
+          Edit details ↗
+        </Link>
+      </header>
+      <section className="paper-panel">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <StatusBadge status={opp.status} />
+          <span className="handwritten text-2xl">
+            {opp.status === 'need_to_apply'
+              ? deadlineLabel(opp.deadline)
+              : 'one step at a time'}
+          </span>
+        </div>
+        <dl className="detail-grid">
+          <div>
+            <dt>Application deadline</dt>
+            <dd>{formatDateTime(opp.deadline)}</dd>
+          </div>
+          <div>
+            <dt>Funding</dt>
+            <dd>{FUNDING_LABELS[opp.funding_type]}</dd>
+          </div>
+          <div>
+            <dt>Date applied</dt>
+            <dd>
+              {opp.applied_date
+                ? formatDateTime(opp.applied_date)
+                : 'Not recorded'}
+            </dd>
+          </div>
+          <div>
+            <dt>Travel & accommodation</dt>
+            <dd>{opp.travel_accommodation || 'Not specified'}</dd>
+          </div>
+        </dl>
+        {source && (
+          <a
+            className="button primary"
+            href={source}
+            target="_blank"
+            rel="noopener noreferrer"
           >
-            Edit
-          </Link>
-          <button
-            onClick={handleDelete}
-            className="rounded-lg border border-red-500/20 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10"
+            Open official website ↗
+          </a>
+        )}
+        {opp.status === 'need_to_apply' &&
+          opp.deadline &&
+          Date.parse(opp.deadline) > Date.now() && (
+            <button
+              className="button ml-0 mt-3 sm:ml-3"
+              onClick={() => {
+                downloadFile(
+                  'opportunity-deadline.ics',
+                  calendarFile([opp]),
+                  'text/calendar'
+                )
+                setMessage(
+                  'Import the calendar file and check its alerts. Export again if this deadline changes.'
+                )
+              }}
+            >
+              ↓ Calendar reminder
+            </button>
+          )}
+      </section>
+      <section className="paper-panel">
+        <div className="section-heading">
+          <h2>Notes & next steps</h2>
+          <span className="handwritten text-xl">your plan goes here</span>
+        </div>
+        <p className="whitespace-pre-wrap break-words leading-relaxed">
+          {opp.notes ||
+            'No notes yet. Add your next step, requirements, or a follow-up reminder using Edit details.'}
+        </p>
+      </section>
+      <section className="paper-panel">
+        <h2 className="mb-3 text-xl">Where are things at?</h2>
+        <label className="block max-w-sm">
+          Application status
+          <select
+            className="mt-2 w-full"
+            value={opp.status}
+            disabled={busy}
+            onChange={(e) => changeStatus(e.target.value as OpportunityStatus)}
           >
-            Delete
-          </button>
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-dark-border bg-dark-card p-6 backdrop-blur-sm">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-          <div>
-            <p className="text-xs font-medium text-gray-500">Status</p>
-            <div className="mt-1"><StatusBadge status={opp.status} /></div>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-gray-500">Deadline</p>
-            <p className="mt-1 text-sm text-white">{formatDate(opp.deadline)}</p>
-            {days !== null && (
-              <p className={`text-xs ${days <= 3 ? 'text-red-400' : 'text-gray-400'}`}>
-                {days <= 0 ? 'Passed' : `${days} days left`}
-              </p>
-            )}
-          </div>
-          <div>
-            <p className="text-xs font-medium text-gray-500">Applied</p>
-            <p className="mt-1 text-sm text-white">{formatDate(opp.applied_date)}</p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-gray-500">Funding</p>
-            <p className="mt-1 text-sm text-white">{FUNDING_LABELS[opp.funding_type]}</p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-gray-500">Category</p>
-            <p className="mt-1 text-sm text-white">{CATEGORY_LABELS[opp.category]}</p>
-          </div>
-        </div>
-
-        {(opp.url || opp.location || opp.travel_accommodation) && (
-          <div className="mt-4 space-y-3 border-t border-dark-border pt-4">
-            {opp.url && (
-              <div>
-                <p className="text-xs font-medium text-gray-500">URL</p>
-                <a href={opp.url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-sm text-accent hover:text-accent/80">
-                  {opp.url}
-                </a>
-              </div>
-            )}
-            {opp.location && (
-              <div>
-                <p className="text-xs font-medium text-gray-500">Location</p>
-                <p className="mt-1 text-sm text-white">{opp.location}</p>
-              </div>
-            )}
-            {opp.travel_accommodation && (
-              <div>
-                <p className="text-xs font-medium text-gray-500">Travel & Accommodation</p>
-                <p className="mt-1 text-sm text-white">{opp.travel_accommodation}</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {opp.notes && (
-          <div className="mt-4 border-t border-dark-border pt-4">
-            <p className="text-xs font-medium text-gray-500">Notes</p>
-            <p className="mt-1 text-sm text-gray-300 whitespace-pre-wrap">{opp.notes}</p>
-          </div>
-        )}
-      </div>
-
-      {nextStatuses.length > 0 && (
-        <div className="rounded-xl border border-dark-border bg-dark-card p-6 backdrop-blur-sm">
-          <h3 className="mb-3 text-sm font-medium text-gray-400">Update Status</h3>
-          <div className="flex flex-wrap gap-2">
-            {nextStatuses.map(status => (
-              <button
-                key={status}
-                onClick={() => handleStatusChange(status)}
-                className="rounded-lg border border-dark-border px-4 py-2 text-sm text-gray-300 transition-colors hover:border-accent/30 hover:text-white"
-              >
-                {status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-              </button>
+            {Object.entries(STATUS_LABELS).map(([v, l]) => (
+              <option key={v} value={v}>
+                {l}
+              </option>
             ))}
-          </div>
-        </div>
+          </select>
+        </label>
+        <p className="mt-3 text-sm text-gray-500">
+          You can move directly to any stage. Marking Applied records the
+          current time if no applied date exists.
+        </p>
+      </section>
+      {message && (
+        <p role="status" className="success-notice">
+          {message}
+        </p>
       )}
+      {actionError && (
+        <p role="alert" className="error-notice">
+          {actionError}
+        </p>
+      )}
+      <details className="danger-zone">
+        <summary>Delete this opportunity</summary>
+        <p className="my-3 text-sm">
+          This permanently removes the record. Export a backup from your
+          notebook first.
+        </p>
+        <button
+          className="button danger"
+          disabled={busy}
+          onClick={async () => {
+            if (
+              window.prompt(
+                `To permanently delete this opportunity, type its title exactly:\n${opp.title}`
+              ) !== opp.title
+            )
+              return
+            setBusy(true)
+            setActionError('')
+            const result = await deleteOpportunity(opp.id)
+            if (result.error) {
+              setActionError(result.error)
+              setBusy(false)
+            } else navigate('/opportunities')
+          }}
+        >
+          Delete permanently
+        </button>
+      </details>
     </div>
   )
 }

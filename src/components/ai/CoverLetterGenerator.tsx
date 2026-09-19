@@ -12,57 +12,108 @@ export default function CoverLetterGenerator() {
   const [selectedId, setSelectedId] = useState('')
   const [extraContext, setExtraContext] = useState('')
   const [letter, setLetter] = useState('')
+  const [profileError, setProfileError] = useState('')
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileLoaded, setProfileLoaded] = useState(false)
+  const [notice, setNotice] = useState('')
   const [showProfile, setShowProfile] = useState(false)
-  const [profile, setProfile] = useState<UserProfile>({ name: '', email: '', skills: '', background: '', interests: '' })
+  const [profile, setProfile] = useState<UserProfile>({
+    name: '',
+    email: '',
+    skills: '',
+    background: '',
+    interests: ''
+  })
 
   useEffect(() => {
     const loadProfile = async () => {
       if (!user) return
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
+      setProfileLoaded(!error)
+      if (error)
+        setProfileError(
+          'Could not load your profile. Please reload before editing it.'
+        )
       if (data) {
         setProfile({
           name: data.name || '',
           email: data.email || user.email || '',
           skills: data.skills || '',
           background: data.background || '',
-          interests: data.interests || '',
+          interests: data.interests || ''
         })
       }
     }
     loadProfile()
   }, [user])
 
-  const selected = opportunities.find(o => o.id === selectedId)
+  const selected = opportunities.find((o) => o.id === selectedId)
 
   const handleGenerate = async () => {
     if (!selected) return
-    const result = await generateCoverLetter(selected, extraContext || undefined)
+    const result = await generateCoverLetter(
+      selected,
+      extraContext || undefined
+    )
     if (result) setLetter(result)
   }
 
   const handleSaveProfile = async () => {
-    await saveProfile(user?.id, profile)
-    setShowProfile(false)
+    setProfileSaving(true)
+    setProfileError('')
+    try {
+      await saveProfile(user?.id, profile)
+      setShowProfile(false)
+      setNotice('Profile saved.')
+    } catch (err) {
+      setProfileError(
+        err instanceof Error ? err.message : 'Could not save your profile.'
+      )
+    } finally {
+      setProfileSaving(false)
+    }
   }
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(letter)
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(letter)
+      setNotice('Letter copied.')
+    } catch {
+      setProfileError(
+        'Copy failed. Select the letter text and copy it manually.'
+      )
+    }
   }
 
   return (
     <div className="space-y-6">
+      {profileError && (
+        <p role="alert" className="error-notice">
+          {profileError}
+        </p>
+      )}
+      {notice && (
+        <p role="status" className="success-notice">
+          {notice}
+        </p>
+      )}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-mono text-lg font-semibold text-white">Cover Letter Generator</h3>
-          <p className="mt-1 text-sm text-gray-400">Generate a personalized cover letter for any opportunity</p>
+          <h3 className="font-mono text-lg font-semibold text-ink">
+            Cover Letter Generator
+          </h3>
+          <p className="mt-1 text-sm text-gray-400">
+            Start a draft from your profile and saved opportunity. Check every
+            claim before using it.
+          </p>
         </div>
         <button
           onClick={() => setShowProfile(!showProfile)}
-          className="rounded-lg border border-dark-border px-3 py-1.5 text-xs text-gray-400 hover:text-white"
+          className="rounded-lg border border-dark-border px-3 py-1.5 text-xs text-gray-400 hover:text-ink"
         >
           {showProfile ? 'Hide Profile' : 'Edit Profile'}
         </button>
@@ -70,79 +121,106 @@ export default function CoverLetterGenerator() {
 
       {showProfile && (
         <div className="rounded-xl border border-dark-border bg-dark-card p-4 backdrop-blur-sm space-y-3">
-          <p className="text-xs font-medium text-gray-400">Your profile helps generate better letters</p>
+          <p className="text-xs font-medium text-gray-400">
+            Your profile helps generate better letters
+          </p>
           <input
+            aria-label="Your name"
             type="text"
             placeholder="Your name"
             value={profile.name}
-            onChange={e => setProfile(p => ({ ...p, name: e.target.value }))}
-            className="w-full rounded-lg border border-dark-border bg-dark px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-accent/50"
+            onChange={(e) =>
+              setProfile((p) => ({ ...p, name: e.target.value }))
+            }
+            className="w-full rounded-lg border border-dark-border bg-dark px-3 py-2 text-sm text-ink placeholder-gray-500 outline-none focus:border-accent/50"
           />
           <textarea
+            aria-label="Your background (education, experience)"
             placeholder="Your background (education, experience)"
             value={profile.background}
-            onChange={e => setProfile(p => ({ ...p, background: e.target.value }))}
+            onChange={(e) =>
+              setProfile((p) => ({ ...p, background: e.target.value }))
+            }
             rows={2}
-            className="w-full rounded-lg border border-dark-border bg-dark px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-accent/50"
+            className="w-full rounded-lg border border-dark-border bg-dark px-3 py-2 text-sm text-ink placeholder-gray-500 outline-none focus:border-accent/50"
           />
           <textarea
+            aria-label="Your skills (technical and soft skills)"
             placeholder="Your skills (technical and soft skills)"
             value={profile.skills}
-            onChange={e => setProfile(p => ({ ...p, skills: e.target.value }))}
+            onChange={(e) =>
+              setProfile((p) => ({ ...p, skills: e.target.value }))
+            }
             rows={2}
-            className="w-full rounded-lg border border-dark-border bg-dark px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-accent/50"
+            className="w-full rounded-lg border border-dark-border bg-dark px-3 py-2 text-sm text-ink placeholder-gray-500 outline-none focus:border-accent/50"
           />
           <textarea
+            aria-label="Your interests and goals"
             placeholder="Your interests and goals"
             value={profile.interests}
-            onChange={e => setProfile(p => ({ ...p, interests: e.target.value }))}
+            onChange={(e) =>
+              setProfile((p) => ({ ...p, interests: e.target.value }))
+            }
             rows={2}
-            className="w-full rounded-lg border border-dark-border bg-dark px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-accent/50"
+            className="w-full rounded-lg border border-dark-border bg-dark px-3 py-2 text-sm text-ink placeholder-gray-500 outline-none focus:border-accent/50"
           />
           <button
+            disabled={profileSaving || !profileLoaded}
             onClick={handleSaveProfile}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90"
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-ink hover:bg-accent/90"
           >
-            Save Profile
+            {profileSaving ? 'Saving…' : 'Save profile'}
           </button>
         </div>
       )}
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-300">Select Opportunity</label>
+        <label className="mb-1 block text-sm font-medium text-gray-300">
+          Select Opportunity
+        </label>
         <select
+          aria-label="Select Opportunity"
           value={selectedId}
-          onChange={e => setSelectedId(e.target.value)}
-          className="w-full rounded-lg border border-dark-border bg-dark-card px-4 py-2.5 text-sm text-white outline-none focus:border-accent/50"
+          onChange={(e) => {
+            setSelectedId(e.target.value)
+            setLetter('')
+          }}
+          className="w-full rounded-lg border border-dark-border bg-dark-card px-4 py-2.5 text-sm text-ink outline-none focus:border-accent/50"
         >
           <option value="">Choose an opportunity...</option>
-          {opportunities.map(o => (
-            <option key={o.id} value={o.id}>{o.title}</option>
+          {opportunities.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.title}
+            </option>
           ))}
         </select>
       </div>
 
       {selected && (
         <div className="rounded-lg border border-dark-border bg-dark/50 p-3 text-xs text-gray-400">
-          {CATEGORY_LABELS[selected.category]} · {FUNDING_LABELS[selected.funding_type]} · {selected.location || 'N/A'}
+          {CATEGORY_LABELS[selected.category]} ·{' '}
+          {FUNDING_LABELS[selected.funding_type]} · {selected.location || 'N/A'}
         </div>
       )}
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-300">Additional Context (optional)</label>
+        <label className="mb-1 block text-sm font-medium text-gray-300">
+          Additional Context (optional)
+        </label>
         <textarea
+          aria-label="Additional Context (optional)"
           value={extraContext}
-          onChange={e => setExtraContext(e.target.value)}
+          onChange={(e) => setExtraContext(e.target.value)}
           rows={2}
           placeholder="Any specific points you want to highlight..."
-          className="w-full rounded-lg border border-dark-border bg-dark-card px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-accent/50"
+          className="w-full rounded-lg border border-dark-border bg-dark-card px-4 py-2.5 text-sm text-ink placeholder-gray-500 outline-none focus:border-accent/50"
         />
       </div>
 
       <button
         onClick={handleGenerate}
         disabled={loading || !selected}
-        className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-accent/90 disabled:opacity-50"
+        className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-paper transition-all hover:bg-accent/90 disabled:opacity-50"
       >
         {loading ? 'Generating...' : 'Generate Cover Letter'}
       </button>
@@ -156,10 +234,12 @@ export default function CoverLetterGenerator() {
       {letter && (
         <div className="rounded-xl border border-dark-border bg-dark-card p-6 backdrop-blur-sm">
           <div className="mb-3 flex items-center justify-between">
-            <h4 className="text-sm font-medium text-gray-400">Generated Cover Letter</h4>
+            <h4 className="text-sm font-medium text-gray-400">
+              Generated Cover Letter
+            </h4>
             <button
               onClick={handleCopy}
-              className="rounded-lg border border-dark-border px-3 py-1.5 text-xs text-gray-400 hover:text-white"
+              className="rounded-lg border border-dark-border px-3 py-1.5 text-xs text-gray-400 hover:text-ink"
             >
               Copy to Clipboard
             </button>

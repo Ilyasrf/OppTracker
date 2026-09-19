@@ -1,105 +1,91 @@
-<div align="center">
-  <img src="project_profile.png" alt="OppTracker Logo" width="150" height="150" />
+# OppTracker
 
-  # OppTracker
+A personal notebook for fellowships, internships, jobs, and other applications.
+Built with React, TypeScript, Vite, Supabase Auth/Postgres, and Vercel.
 
-  **Never Lose Track of an Opportunity Again**
+## Daily use
 
-  *A smart, AI-powered platform to manage your applications for fellowships, internships, hackathons, and funded programs.*
+- **My desk:** next pending application, upcoming deadlines, overdue applications, and recently updated records. Submitted applications are excluded from the application to-do list; their original deadlines remain in their records.
+- **Opportunities:** search title/place/notes, filter status/funding/category, and sort by deadline, update time, or title.
+- **Export backup:** downloads every fetched opportunity as JSON, including IDs and timestamps. Keep the export private. This is an opportunity export, not a full Supabase database backup; it does not include Auth users or profiles. No automatic import/restore is implemented.
+- **Calendar:** downloads pending future deadlines as an `.ics` file with 3-day, 1-day, and 1-hour alarms. Import it into your calendar and confirm alerts are enabled there. Calendar apps may handle alarms differently. This is a snapshot, not a subscription: export/import again when deadlines change, and remove obsolete calendar events when you apply or change a deadline. The website does not send email or background push notifications.
+- **Dates:** enter deadlines in the timezone displayed beside the input. Dates are stored as UTC timestamps and displayed in your device timezone. Verify the organizer's timezone before saving.
+- **Notes & next steps:** keep application-specific requirements and follow-ups in opportunity notes.
+- **Preparation:** create certificate, job interview, and course plans with target dates, linked opportunities, editable starter checklists, study resources, and reflections. Save changes explicitly to sync across devices. Mark plans completed or archive them; nothing is automatically deleted. Target dates do not schedule notifications. Export plans separately to include their checklists and notes.
+- **AI history:** conversations are saved to your Supabase account before requesting a reply and again after receiving it. Open previous conversations, search their titles, start a new chat, or export the current chat. Failed AI replies can be retried without duplicating your question. Each conversation holds up to 200 messages within a 2 MB storage limit; AI context uses the latest 10 messages within a 12,000-character budget. Conversations from the old, memory-only chat cannot be recovered.
+- **Preparation coaching:** after saving a plan, choose “Prepare with AI.” Review the prepared prompt, then send it. Only the plan details included in that prompt are shared; AI does not automatically read every preparation plan or change your checklists.
+- **AI:** draft letters, discuss saved opportunities, extract a draft from pasted official source text, and review possible risk signals. AI cannot browse websites, verify legitimacy, or change records. Review and save extracted drafts yourself. Extracted dates stay in notes until you verify their exact time and timezone.
+- Preparation edits and chat messages awaiting a successful save are kept in this tab’s session storage, scoped to your account, for recovery after navigation/reload. This is not a backup: closing the tab, clearing browser data, or blocked storage can lose unsaved drafts. Save or export before leaving; the UI reports failures and offers recovery. Other AI panels retain drafts only while mounted.
+- Concurrent edits use a server timestamp check. A stale tab cannot overwrite a newer plan or conversation. Export an unsaved draft, then reload the saved version to resolve a conflict.
 
-  [**View Live Demo**](https://opp-tracker-eta.vercel.app/)
-</div>
+## Authentication
 
----
+Login, signup, and confirmation use the existing Supabase Auth project and account data. The screens share the notebook design, support password managers and password visibility, and return you to the protected page you opened before signing in. Signup handles both email confirmation and immediate sessions according to your existing Supabase settings. Failed or expired callback links show a sign-in recovery message. No provider settings, existing passwords, users, or sessions are reset by this release.
 
-## 🌟 The Problem & The Solution
+Run `python tests/auth_smoke.py` against the same dummy Vite endpoint documented below to test login/signup/confirmation, sign-out (including remote revocation failure), protected redirects, external redirect rejection, and desktop/mobile layout without creating real accounts or sending emails.
 
-Every year, millions of people apply to various programs. The process is chaotic: opportunities are scattered, deadlines are missed, writing cover letters takes too much time, and scam programs steal time and money.
+## Local development
 
-**OppTracker solves all of this in one place.** It is a web-based opportunity management platform that helps you track, analyze, and apply to international programs with AI-powered assistance. It combines a clean dashboard with smart automation to turn a stressful process into a structured workflow.
+Node.js 22.18+ is recommended. Copy `.env.example` to `.env.local`, then configure your Supabase URL and public/anon key. Never use a service-role key in the browser.
 
----
+```sh
+npm ci
+npm run dev
+npm run lint
+npm test
+npm run build
+```
 
-## ✨ Core Features
+`npm run dev` serves the frontend. Use `vercel dev` to run the local `/api/ai` serverless route as well, or test AI against a preview deployment with the server environment configured. Missing AI configuration produces a helpful error and does not affect opportunity management.
 
-- **📊 Smart Dashboard:** A real-time overview of your application pipeline with upcoming deadlines and recent activity.
-- **📝 Full Opportunity Management:** Track every detail of each opportunity (Title, URL, Deadline, Status, Funding Type, Category, Location, etc.).
-- **🔄 Application Status Workflow:** A structured 7-stage pipeline: `Need to Apply` ➡️ `Applied` ➡️ `Under Review` ➡️ `Interview` ➡️ `Accepted` (or `Rejected` / `Scam`).
-- **🔍 Search and Filtering:** Find any opportunity instantly using text search or filters.
-- **🛡️ Scam Detection & Blacklist:** Protect yourself from fraudulent programs with AI-powered analysis and a dedicated Scam List.
-- **⏰ Deadline Reminders:** Automatic reminders scheduled before deadlines with color-coded countdown badges.
+## Production rollout — existing installation
 
----
+This release **requires the additive migration** [`002_preparation_and_chat.sql`](supabase/migrations/002_preparation_and_chat.sql) for chat history and preparation. It creates only new tables, validation functions, policies, indexes, and triggers; it does not update or remove existing opportunities or profiles. Until applied, the new sections show a setup message while existing opportunity management continues to work.
 
-## 🤖 AI-Powered Tools
+Do **not** run `supabase/schema.sql` or migration `001_add_auth.sql` against production. The schema is for a fresh database only and refuses existing tracker tables; migration 001 is disabled. For a new installation, run the schema first, then migration 002. Migration 002 is transactional and intended to run once; a repeat run fails and rolls back without deleting records.
 
-OppTracker integrates **Google Gemini** to provide intelligent assistance:
+1. Before rollout, export opportunities and take a database backup using your Supabase backup process. Verify the opportunity count and that the backup is usable. No backup is automatically taken by this code change.
+2. Test migration 002 on a separate Supabase test project, then apply it once through the Supabase SQL Editor on the existing project. Verify your opportunity count and sample records are unchanged. Both new tables have owner-only RLS and no client delete permission. Linked opportunities must belong to the same user. The code push does not apply SQL automatically.
+3. Verify the deployed `opportunities` and `profiles` tables have the owner-only RLS policies expected by this repository. The frontend's `user_id` filters are not a substitute for database authorization.
+4. Configure these **server-only** Vercel environment variables:
 
-1. **URL Analyzer:** Paste any opportunity URL and the AI extracts details, requirements, and provides a scam score instantly.
-2. **Cover Letter Generator:** Generate personalized cover letters in seconds tailored to the specific opportunity and your profile.
-3. **Smart Chat Assistant:** A conversational AI that knows your entire tracker. Ask it for deadline summaries or which opportunities to prioritize!
-4. **Scam Detector:** Analyze any opportunity for fraud signals, red/green flags, and get a clear recommendation on whether to apply.
+   | Variable             | Value                                       |
+   | -------------------- | ------------------------------------------- |
+   | `GEMINI_API_KEY`     | A new Gemini API key                        |
+   | `GEMINI_MODEL`       | A model ID available to your Gemini project |
+   | `AI_ALLOWED_USER_ID` | Your existing Supabase Auth user UUID       |
 
----
+   The function uses `SUPABASE_URL` / `SUPABASE_ANON_KEY` when provided, otherwise the existing `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`. It never requires a service-role key.
 
-## 🛠️ Tech Stack
+5. Preview and test with a separate test backend or the isolated mock test described below. A preview pointed at production can still write production records.
+6. Deploy the verified frontend and API together. Revoke the old browser-exposed Gemini key and remove `VITE_GEMINI_API_KEY` from deployment environments. Old cached builds can contain the old key; revocation is necessary.
+7. Verify login, existing opportunity count, AI access, calendar import, a saved/reloaded conversation, and a saved/reloaded preparation plan. Keep the previous deployment available for frontend rollback. Rolling back does not restore a revoked key; prefer disabling AI temporarily over re-exposing a key.
 
-- **Frontend:** React 19, TypeScript, Vite
-- **Routing:** React Router 7
-- **Styling:** Tailwind CSS 4
-- **Backend / Database:** Supabase (PostgreSQL)
-- **AI Integration:** Google Gemini
-- **Deployment:** Vercel
+The API verifies the Supabase access token, restricts access to the configured owner, limits prompt size, masks upstream errors, and times out slow requests. Its small in-memory request limit is per function instance, not a durable cost cap. Set appropriate Gemini quotas/billing alerts. Use a shared limit if the app later serves multiple users.
 
----
+## Isolated browser checks
 
-## 🚀 Getting Started
+`tests/browser_smoke.py` intercepts all API traffic and aborts unexpected external requests. It creates, updates, and exports only in-memory fixtures. It must use the dummy Supabase endpoint below.
 
-To run OppTracker locally, follow these steps:
+```sh
+VITE_SUPABASE_URL=https://opptracker-test.invalid VITE_SUPABASE_ANON_KEY=public-test-key npm run dev -- --host 127.0.0.1 --port 5173
+# In another terminal with Python Playwright and Chromium installed:
+python tests/browser_smoke.py
+```
 
-### Prerequisites
+The test also covers saved/reloaded conversations, reply retries, unsaved draft recovery, preparation checklists, resources, coaching prompts, exports, archiving, concurrent-write rejection, missing-migration messages, and mobile preparation layout.
 
-- Node.js installed
-- A Supabase project
-- A Google Gemini API Key
+The test covers deadline filtering, export, search, timezone-preserving edits, failed saves, applied timestamps, unsafe AI text, failed profile saves, malformed AI responses, draft capture, mobile layout/navigation, and failed reads. Screenshots are written to `/tmp/opptracker-desktop.png` and `/tmp/opptracker-mobile.png`.
 
-### Installation
+The hand-drawn headings use the self-hosted Caveat font from Google Fonts, licensed under the SIL Open Font License in `public/fonts/OFL.txt`.
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Ilyasrf/OppTracker.git
-   cd OppTracker
-   ```
+## Local database-policy check
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+The migration check runs real PostgreSQL semantics in an in-memory PGlite instance. It uses two dummy users to verify RLS, linked-opportunity ownership, JSON validation, concurrent writes, disabled deletion, and preservation of existing opportunity rows. No network database is contacted and no runtime dependency is added to the app.
 
-3. **Environment Setup:**
-   Create a `.env` file in the root directory (you can copy `.env.example`) and add your variables:
-   ```env
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   VITE_GEMINI_API_KEY=your_gemini_api_key
-   ```
+```sh
+npm install --prefix /tmp/opptracker-sql-check @electric-sql/pglite
+PGLITE_MODULE=/tmp/opptracker-sql-check/node_modules/@electric-sql/pglite/dist/index.js node tests/migration_check.mjs
+```
 
-4. **Run the development server:**
-   ```bash
-   npm run dev
-   ```
-
-5. Open your browser and navigate to the local URL provided by Vite (usually `http://localhost:5173`).
-
----
-
-## 🎨 Design Philosophy
-
-- **Dark Theme:** Deep navy background with glass-morphism cards and subtle blue borders.
-- **Color-Coded Status:** Instant visual recognition for different application stages (e.g., Yellow for "Need to Apply", Green for "Accepted", Red for "Scam").
-
----
-
-<div align="center">
-  <i>Built with ❤️ by Ilyas</i>
-</div>
+For a frontend rollback, retain the additive tables and switch to the previous deployment. Do not drop the tables: that would delete newly saved plans and conversations.
