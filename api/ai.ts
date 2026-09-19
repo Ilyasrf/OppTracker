@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createClient } from '@supabase/supabase-js'
 

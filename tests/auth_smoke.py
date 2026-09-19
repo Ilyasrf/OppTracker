@@ -1,5 +1,7 @@
 """Isolated auth regression. Use the same dummy Vite settings as browser_smoke.py.
 No real accounts, confirmation emails, or external service requests are created.
+Configuration regression: start Vite with VITE_SUPABASE_URL=' https://opptracker-test.invalid '
+and VITE_SUPABASE_ANON_KEY=' public-test-key ' to verify pasted whitespace is ignored.
 """
 import base64
 import json
