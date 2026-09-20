@@ -1,6 +1,6 @@
 """Isolated auth regression. Use the same dummy Vite settings as browser_smoke.py.
 No real accounts, confirmation emails, or external service requests are created.
-Configuration regression: start Vite with VITE_SUPABASE_URL=' https://opptracker-test.invalid '
+Configuration regression: start Vite with VITE_SUPABASE_URL=' https://oppnote-test.invalid '
 and VITE_SUPABASE_ANON_KEY=' public-test-key ' to verify pasted whitespace is ignored.
 """
 import base64
@@ -24,7 +24,7 @@ def route(request):
     url=urlparse(req.url)
     def respond(body,status=200): request.fulfill(status=status,content_type='application/json',body=json.dumps(body),headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*'})
     if url.netloc=='127.0.0.1:5173': return request.continue_()
-    if url.netloc!='opptracker-test.invalid': unexpected.append(req.url); return request.abort()
+    if url.netloc!='oppnote-test.invalid': unexpected.append(req.url); return request.abort()
     if req.method=='OPTIONS': return respond({})
     session={'access_token':token(),'refresh_token':'fake-refresh','expires_in':3600,'token_type':'bearer','user':user}
     if url.path.endswith('/token'):
@@ -52,7 +52,7 @@ with sync_playwright() as p:
     page.goto(BASE+'/preparation');page.wait_for_load_state('networkidle')
     expect(page).to_have_url(BASE+'/login')
     expect(page.get_by_role('heading',name='Welcome back.')).to_be_visible()
-    page.screenshot(path='/tmp/opptracker-auth-desktop.png',full_page=True)
+    page.screenshot(path='/tmp/oppnote-auth-desktop.png',full_page=True)
     page.get_by_label('Email',exact=True).fill('test@example.com')
     page.get_by_label('Password',exact=True).fill('example-password')
     expect(page.get_by_label('Password',exact=True)).to_have_attribute('autocomplete','current-password')
@@ -84,7 +84,7 @@ with sync_playwright() as p:
     expect(page.get_by_role('heading',name='Start your notebook.')).to_be_visible()
     page.set_viewport_size({'width':390,'height':844})
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
-    page.screenshot(path='/tmp/opptracker-auth-mobile.png',full_page=True)
+    page.screenshot(path='/tmp/oppnote-auth-mobile.png',full_page=True)
     page.get_by_label('Email',exact=True).fill('test@example.com')
     page.get_by_label('Password',exact=True).fill('example-password')
     page.get_by_label('Confirm password',exact=True).fill('different-password')

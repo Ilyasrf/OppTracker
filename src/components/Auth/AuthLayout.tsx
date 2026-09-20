@@ -13,11 +13,11 @@ export default function AuthLayout({
   return (
     <div className="auth-shell">
       <header className="auth-header">
-        <Link className="brand" to="/" aria-label="OppTracker home">
+        <Link className="brand" to="/" aria-label="OppNote home">
           <span className="brand-mark" aria-hidden="true">
             ↗
           </span>
-          opp<span className="font-normal">tracker</span>
+          opp<span className="font-normal">note</span>
           <span className="brand-dot" />
         </Link>
         <span className="handwritten">A little more organized.</span>
@@ -65,7 +65,7 @@ export default function AuthLayout({
           className="paper-panel auth-panel"
           aria-labelledby="auth-form-title"
         >
-          <p className="eyebrow">OppTracker / your space</p>
+          <p className="eyebrow">OppNote / your space</p>
           <h2 id="auth-form-title">{title}</h2>
           <p className="subtitle">{subtitle}</p>
           {children}

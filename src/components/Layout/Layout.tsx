@@ -11,7 +11,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <footer className="site-footer">
-        <span>OppTracker / A little more organized.</span>
+        <span>OppNote / A little more organized.</span>
         <span className="handwritten text-xl">
           make room for what’s next ↗
         </span>

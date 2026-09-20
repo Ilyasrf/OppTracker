@@ -160,7 +160,7 @@ export default function Dashboard() {
                 className="text-link"
                 onClick={() => {
                   downloadFile(
-                    'opptracker-deadlines.ics',
+                    'oppnote-deadlines.ics',
                     calendarFile(opportunities),
                     'text/calendar'
                   )

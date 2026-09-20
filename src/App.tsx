@@ -22,7 +22,7 @@ export default function App() {
         <div className="paper-panel">
           <h1>Connect your notebook.</h1>
           <p className="subtitle">
-            Configure the Supabase URL and public key to open OppTracker.
+            Configure the Supabase URL and public key to open OppNote.
           </p>
         </div>
       </main>

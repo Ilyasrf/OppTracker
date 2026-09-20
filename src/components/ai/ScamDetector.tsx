@@ -74,7 +74,7 @@ export default function ScamDetector() {
               : 'border border-dark-border text-gray-400 hover:text-ink'
           }`}
         >
-          From Tracker
+          From Notebook
         </button>
         <button
           onClick={() => {

@@ -1,6 +1,6 @@
 // Isolated Postgres/WASM check. Never connects to Supabase or a network database.
-// npm install --prefix /tmp/opptracker-sql-check @electric-sql/pglite
-// PGLITE_MODULE=/tmp/opptracker-sql-check/node_modules/@electric-sql/pglite/dist/index.js node tests/migration_check.mjs
+// npm install --prefix /tmp/oppnote-sql-check @electric-sql/pglite
+// PGLITE_MODULE=/tmp/oppnote-sql-check/node_modules/@electric-sql/pglite/dist/index.js node tests/migration_check.mjs
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'

@@ -70,7 +70,7 @@ test('calendar includes only upcoming unsubmitted applications, UTC and valid UT
   const ics = calendarFile(opportunities, now)
   assert.equal((ics.match(/BEGIN:VEVENT/g) || []).length, 1)
   assert.ok(ics.includes('DTSTART:20260919T120000Z'))
-  assert.ok(ics.includes('UID:next@opptracker'))
+  assert.ok(ics.includes('UID:next@oppnote'))
   for (const alarm of ['-P3D', '-P1D', '-PT1H'])
     assert.ok(ics.includes(`TRIGGER:${alarm}`))
   assert.ok(ics.replace(/\r\n /g, '').includes('Fellowship\\, notes\\; ü'))

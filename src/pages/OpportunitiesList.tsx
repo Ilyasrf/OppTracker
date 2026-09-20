@@ -88,7 +88,7 @@ export default function OpportunitiesList() {
             disabled={!opportunities.length}
             onClick={() => {
               downloadFile(
-                `opptracker-backup-${new Date().toISOString().slice(0, 10)}.json`,
+                `oppnote-backup-${new Date().toISOString().slice(0, 10)}.json`,
                 JSON.stringify(
                   {
                     version: 1,
@@ -119,7 +119,7 @@ export default function OpportunitiesList() {
             }
             onClick={() => {
               downloadFile(
-                'opptracker-deadlines.ics',
+                'oppnote-deadlines.ics',
                 calendarFile(opportunities),
                 'text/calendar'
               )

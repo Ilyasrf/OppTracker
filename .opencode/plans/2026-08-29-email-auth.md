@@ -282,7 +282,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-dark px-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <h1 className="font-mono text-3xl font-bold text-accent">OppTracker</h1>
+          <h1 className="font-mono text-3xl font-bold text-accent">OppNote</h1>
           <p className="mt-2 text-gray-400">Sign in to track your opportunities</p>
         </div>
 
@@ -382,7 +382,7 @@ export default function SignupPage() {
     <div className="flex min-h-screen items-center justify-center bg-dark px-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <h1 className="font-mono text-3xl font-bold text-accent">OppTracker</h1>
+          <h1 className="font-mono text-3xl font-bold text-accent">OppNote</h1>
           <p className="mt-2 text-gray-400">Create your account</p>
         </div>
 
@@ -460,7 +460,7 @@ export default function VerifyPage() {
     <div className="flex min-h-screen items-center justify-center bg-dark px-4">
       <div className="w-full max-w-md text-center">
         <div className="mb-8">
-          <h1 className="font-mono text-3xl font-bold text-accent">OppTracker</h1>
+          <h1 className="font-mono text-3xl font-bold text-accent">OppNote</h1>
         </div>
 
         <div className="rounded-xl border border-dark-border bg-dark-card p-8 backdrop-blur-sm">
@@ -636,7 +636,7 @@ export default function Navbar() {
             <svg className="h-8 w-8 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
-            <span className="font-mono text-xl font-bold text-white">OppTracker</span>
+            <span className="font-mono text-xl font-bold text-white">OppNote</span>
           </Link>
           <div className="hidden md:flex md:gap-1">
             {navLinks.map((link) => (

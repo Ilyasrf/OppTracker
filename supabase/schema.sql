@@ -1,9 +1,9 @@
 -- Fresh database setup ONLY. Never reset a production database.
--- This guard runs before any DDL and refuses to modify existing tracker tables.
+-- This guard runs before any DDL and refuses to modify existing OppNote tables.
 BEGIN;
 DO $$ BEGIN
   IF to_regclass('public.opportunities') IS NOT NULL OR to_regclass('public.profiles') IS NOT NULL THEN
-    RAISE EXCEPTION 'Tracker tables already exist. No changes made. Use a reviewed additive migration after a verified backup.';
+    RAISE EXCEPTION 'OppNote tables already exist. No changes made. Use a reviewed additive migration after a verified backup.';
   END IF;
 END $$;
 

@@ -9,11 +9,11 @@ export default function Navbar() {
   return (
     <header className="site-header">
       <div className="nav-shell">
-        <NavLink to="/" className="brand" aria-label="OppTracker home">
+        <NavLink to="/" className="brand" aria-label="OppNote home">
           <span className="brand-mark" aria-hidden="true">
             ↗
           </span>
-          opp<span className="font-normal">tracker</span>
+          opp<span className="font-normal">note</span>
           <span className="brand-dot" />
         </NavLink>
         <nav aria-label="Main navigation" className="nav-links">

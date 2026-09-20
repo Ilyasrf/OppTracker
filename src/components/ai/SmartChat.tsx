@@ -40,7 +40,7 @@ export default function SmartChat() {
   const [search, setSearch] = useState('')
   const lock = useRef(false)
   const end = useRef<HTMLDivElement>(null)
-  const recoveryKey = `opptracker-chat-draft:${user?.id}`
+  const recoveryKey = `oppnote-chat-draft:${user?.id}`
 
   useEffect(() => {
     try {
@@ -251,7 +251,7 @@ export default function SmartChat() {
               className="text-link"
               onClick={() =>
                 downloadFile(
-                  'opptracker-conversation.json',
+                  'oppnote-conversation.json',
                   JSON.stringify(active, null, 2),
                   'application/json'
                 )

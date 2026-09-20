@@ -81,7 +81,7 @@ export async function saveProfile(
 }
 
 function opportunitiesToContext(opportunities: Opportunity[]): string {
-  if (opportunities.length === 0) return 'No opportunities in tracker yet.'
+  if (opportunities.length === 0) return 'No opportunities in the notebook yet.'
   return opportunities
     .map(
       (o) =>
@@ -289,7 +289,7 @@ Consider: application fees, vague requirements, unrealistic promises, missing or
         .slice(-12000)
 
       const result = await generateText(
-        `You are an AI assistant for an opportunity tracker app. Help the user manage their international opportunities (fellowships, internships, hackathons, jobs, volunteering).
+        `You are the AI assistant inside OppNote. Help the user manage their international opportunities (fellowships, internships, hackathons, jobs, volunteering).
 
 USER PROFILE:
 - Name: ${profile.name.slice(0, 500) || 'Not specified'}
@@ -298,13 +298,13 @@ USER PROFILE:
 
 CURRENT TIME: ${new Date().toISOString()}
 
-CURRENT OPPORTUNITIES IN TRACKER:
+CURRENT OPPORTUNITIES IN OPPNOTE:
 ${context}
 
 ${historyText ? `RECENT CONVERSATION:\n${historyText}\n` : ''}
 USER MESSAGE: ${message}
 
-Be helpful, concise, and specific. Reference their actual opportunities when relevant. Help with certificate study, courses, and interview practice when asked. Tracker context and older conversation history may be truncated; do not assume an omitted record does not exist. Give actionable advice.`
+Be helpful, concise, and specific. Reference their actual opportunities when relevant. Help with certificate study, courses, and interview practice when asked. OppNote context and older conversation history may be truncated; do not assume an omitted record does not exist. Give actionable advice.`
       )
       return result
     } catch (err) {

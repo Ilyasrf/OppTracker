@@ -91,7 +91,7 @@ export default function LoginPage() {
           </button>
         </fieldset>
         <p className="auth-switch">
-          New to OppTracker?{' '}
+          New to OppNote?{' '}
           <Link
             to="/signup"
             state={{ from: destination }}

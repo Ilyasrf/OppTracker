@@ -1,5 +1,5 @@
 """Isolated browser regression: no production hosts or credentials are used.
-Run Vite with VITE_SUPABASE_URL=https://opptracker-test.invalid and
+Run Vite with VITE_SUPABASE_URL=https://oppnote-test.invalid and
 VITE_SUPABASE_ANON_KEY=public-test-key, then: python tests/browser_smoke.py
 Requires Python Playwright + Chromium. All service traffic is intercepted.
 """
@@ -30,13 +30,13 @@ session={'access_token':jwt(),'refresh_token':'fake-refresh','expires_at':int(ti
 with sync_playwright() as p:
     browser=p.chromium.launch(headless=True)
     context=browser.new_context(viewport={'width':1440,'height':1100},timezone_id='Africa/Casablanca',accept_downloads=True)
-    context.add_init_script("localStorage.setItem('sb-opptracker-test-auth-token',"+json.dumps(json.dumps(session))+");")
+    context.add_init_script("localStorage.setItem('sb-oppnote-test-auth-token',"+json.dumps(json.dumps(session))+");")
     unexpected=[]
     def route(request):
         req=request.request
         url=urlparse(req.url)
         def respond(body,status=200): request.fulfill(status=status,content_type='application/json',body=json.dumps(body),headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*'})
-        if url.netloc=='opptracker-test.invalid':
+        if url.netloc=='oppnote-test.invalid':
             if req.method=='OPTIONS': return respond({})
             if url.path.startswith('/auth/'): return respond(user)
             table=url.path.rsplit('/',1)[-1]
@@ -99,7 +99,7 @@ with sync_playwright() as p:
     expect(section.get_by_text('Community Leadership Program')).to_have_count(0)
     expect(section.get_by_text('Open Science Internship')).to_have_count(0)
     expect(page.get_by_role('heading',name='1 deadline has passed')).to_be_visible()
-    page.screenshot(path='/tmp/opptracker-desktop.png',full_page=True)
+    page.screenshot(path='/tmp/oppnote-desktop.png',full_page=True)
     page.get_by_role('link',name='Opportunities',exact=True).click();page.wait_for_load_state('networkidle')
     with page.expect_download() as dl: page.get_by_role('button',name='Export backup').click()
     exported=json.loads(Path(dl.value.path()).read_text())
@@ -158,7 +158,7 @@ with sync_playwright() as p:
     expect(page.locator('.chat-message.assistant')).to_have_count(2)
     assert len(notebooks['ai_conversations'][1]['messages'])==4
     assert 'User: Interview practice' in state['prompts'][-1]
-    page.screenshot(path='/tmp/opptracker-chat-desktop.png',full_page=True)
+    page.screenshot(path='/tmp/oppnote-chat-desktop.png',full_page=True)
     # Preparation: templates, changes, safe links, persistence and coaching.
     page.get_by_role('link',name='Preparation',exact=True).click()
     page.get_by_role('button',name='+ New plan',exact=True).click()
@@ -185,7 +185,7 @@ with sync_playwright() as p:
     assert len(notebooks['preparation_plans'])==1
     assert notebooks['preparation_plans'][0]['target_date']=='2027-02-01'
     assert page.locator('a[href^="javascript:"]').count()==0
-    page.screenshot(path='/tmp/opptracker-preparation-desktop.png',full_page=True)
+    page.screenshot(path='/tmp/oppnote-preparation-desktop.png',full_page=True)
     page.get_by_role('link',name='Prepare with AI').click()
     expect(page.get_by_label('Message to your assistant')).to_have_value(re.compile('Help me prepare.*Cloud certificate', re.S))
     page.get_by_role('link',name='Preparation',exact=True).click()
@@ -209,7 +209,7 @@ with sync_playwright() as p:
     expect(page.get_by_role('button',name=re.compile('Certificate.*Cloud certificate'))).to_be_visible()
     page.set_viewport_size({'width':390,'height':844})
     assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
-    page.screenshot(path='/tmp/opptracker-preparation-mobile.png',full_page=True)
+    page.screenshot(path='/tmp/oppnote-preparation-mobile.png',full_page=True)
     page.set_viewport_size({'width':1440,'height':1100})
     state['missing_notebook']=True
     page.reload();page.wait_for_load_state('networkidle')
@@ -243,7 +243,7 @@ with sync_playwright() as p:
     page.set_viewport_size({'width':390,'height':844})
     expect(page.get_by_role('link',name='AI assistant',exact=True)).to_be_visible()
     assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
-    page.screenshot(path='/tmp/opptracker-mobile.png',full_page=True)
+    page.screenshot(path='/tmp/oppnote-mobile.png',full_page=True)
     page.get_by_role('link',name='Opportunities',exact=True).click();page.wait_for_load_state('networkidle')
     assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
     page.get_by_role('link',name='AI assistant',exact=True).click();page.wait_for_load_state('networkidle')

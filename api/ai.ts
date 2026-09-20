@@ -58,7 +58,7 @@ export default async function handler(
       return send(401, { error: 'Your session expired. Please sign in again.' })
     if (data.user.id !== AI_ALLOWED_USER_ID)
       return send(403, {
-        error: 'AI access is restricted to the owner of this tracker.'
+        error: 'AI access is restricted to the owner of this notebook.'
       })
     let body = req.body
     if (body === undefined) {

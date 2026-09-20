@@ -25,7 +25,7 @@ export default function Preparation() {
   const [saveError, setSaveError] = useState('')
   const [filter, setFilter] = useState('active')
   const [search, setSearch] = useState('')
-  const recoveryKey = `opptracker-preparation-draft:${user?.id}`
+  const recoveryKey = `oppnote-preparation-draft:${user?.id}`
 
   useEffect(() => {
     try {
@@ -124,7 +124,7 @@ export default function Preparation() {
   ).length
   const exportDraft = () =>
     downloadFile(
-      'opptracker-preparation.json',
+      'oppnote-preparation.json',
       JSON.stringify(
         {
           exported_at: new Date().toISOString(),

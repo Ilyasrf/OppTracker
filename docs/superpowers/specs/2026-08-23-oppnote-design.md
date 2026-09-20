@@ -1,4 +1,4 @@
-# Opportunity Tracker — Design Spec
+# OppNote — Design Spec
 
 ## Overview
 A personal web app to track international opportunities (fellowships, internships, hackathons, volunteering). Dark bokeh + blue accents theme matching the FASR website aesthetic.

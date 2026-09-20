@@ -1,4 +1,4 @@
-# OppTracker
+# OppNote
 
 A personal notebook for fellowships, internships, jobs, and other applications.
 Built with React, TypeScript, Vite, Supabase Auth/Postgres, and Vercel.
@@ -42,7 +42,7 @@ npm run build
 
 This release requires the additive migrations [`002_preparation_and_chat.sql`](supabase/migrations/002_preparation_and_chat.sql) for chat history and preparation and [`003_repair_signup_profiles.sql`](supabase/migrations/003_repair_signup_profiles.sql) for reliable signup profile creation. Migration 003 also creates missing profile rows for existing Auth users; it preserves existing profiles and never changes opportunities.
 
-Do **not** run `supabase/schema.sql` or migration `001_add_auth.sql` against production. The schema is for a fresh database only and refuses existing tracker tables; migration 001 is disabled. For a new installation, run the schema first, then migration 002. Migration 002 is transactional and intended to run once; migration 003 is transactional and safe to repeat.
+Do **not** run `supabase/schema.sql` or migration `001_add_auth.sql` against production. The schema is for a fresh database only and refuses existing OppNote tables; migration 001 is disabled. For a new installation, run the schema first, then migration 002. Migration 002 is transactional and intended to run once; migration 003 is transactional and safe to repeat.
 
 1. Before rollout, export opportunities and take a database backup using your Supabase backup process. Verify the opportunity count and that the backup is usable. No backup is automatically taken by this code change.
 2. Test migrations 002 and 003 on a separate Supabase test project, then apply them through the Supabase SQL Editor on the existing project. Verify your opportunity count and sample records are unchanged. Both new tables have owner-only RLS and no client delete permission. Linked opportunities must belong to the same user. The code push does not apply SQL automatically.
@@ -68,14 +68,14 @@ The API verifies the Supabase access token, restricts access to the configured o
 `tests/browser_smoke.py` intercepts all API traffic and aborts unexpected external requests. It creates, updates, and exports only in-memory fixtures. It must use the dummy Supabase endpoint below.
 
 ```sh
-VITE_SUPABASE_URL=https://opptracker-test.invalid VITE_SUPABASE_ANON_KEY=public-test-key npm run dev -- --host 127.0.0.1 --port 5173
+VITE_SUPABASE_URL=https://oppnote-test.invalid VITE_SUPABASE_ANON_KEY=public-test-key npm run dev -- --host 127.0.0.1 --port 5173
 # In another terminal with Python Playwright and Chromium installed:
 python tests/browser_smoke.py
 ```
 
 The test also covers saved/reloaded conversations, reply retries, unsaved draft recovery, preparation checklists, resources, coaching prompts, exports, archiving, concurrent-write rejection, missing-migration messages, and mobile preparation layout.
 
-The test covers deadline filtering, export, search, timezone-preserving edits, failed saves, applied timestamps, unsafe AI text, failed profile saves, malformed AI responses, draft capture, mobile layout/navigation, and failed reads. Screenshots are written to `/tmp/opptracker-desktop.png` and `/tmp/opptracker-mobile.png`.
+The test covers deadline filtering, export, search, timezone-preserving edits, failed saves, applied timestamps, unsafe AI text, failed profile saves, malformed AI responses, draft capture, mobile layout/navigation, and failed reads. Screenshots are written to `/tmp/oppnote-desktop.png` and `/tmp/oppnote-mobile.png`.
 
 The hand-drawn headings use the self-hosted Caveat font from Google Fonts, licensed under the SIL Open Font License in `public/fonts/OFL.txt`.
 
@@ -84,8 +84,8 @@ The hand-drawn headings use the self-hosted Caveat font from Google Fonts, licen
 The migration check runs real PostgreSQL semantics in an in-memory PGlite instance. It uses two dummy users to verify RLS, linked-opportunity ownership, JSON validation, concurrent writes, disabled deletion, and preservation of existing opportunity rows. No network database is contacted and no runtime dependency is added to the app.
 
 ```sh
-npm install --prefix /tmp/opptracker-sql-check @electric-sql/pglite
-PGLITE_MODULE=/tmp/opptracker-sql-check/node_modules/@electric-sql/pglite/dist/index.js node tests/migration_check.mjs
+npm install --prefix /tmp/oppnote-sql-check @electric-sql/pglite
+PGLITE_MODULE=/tmp/oppnote-sql-check/node_modules/@electric-sql/pglite/dist/index.js node tests/migration_check.mjs
 ```
 
 For a frontend rollback, retain the additive tables and switch to the previous deployment. Do not drop the tables: that would delete newly saved plans and conversations.

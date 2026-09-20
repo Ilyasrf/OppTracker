@@ -110,13 +110,13 @@ export function calendarFile(
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//OppTracker//Deadlines//EN',
+    'PRODID:-//OppNote//Deadlines//EN',
     'CALSCALE:GREGORIAN'
   ]
   for (const opp of pendingDeadlines(opportunities, now).upcoming) {
     lines.push(
       'BEGIN:VEVENT',
-      `UID:${opp.id}@opptracker`,
+      `UID:${opp.id}@oppnote`,
       `DTSTAMP:${calendarDate(new Date(now).toISOString())}`,
       `DTSTART:${calendarDate(opp.deadline!)}`,
       `SUMMARY:${escapeCalendar(`Apply: ${opp.title}`)}`,
