@@ -40,12 +40,12 @@ npm run build
 
 ## Production rollout — existing installation
 
-This release **requires the additive migration** [`002_preparation_and_chat.sql`](supabase/migrations/002_preparation_and_chat.sql) for chat history and preparation. It creates only new tables, validation functions, policies, indexes, and triggers; it does not update or remove existing opportunities or profiles. Until applied, the new sections show a setup message while existing opportunity management continues to work.
+This release requires the additive migrations [`002_preparation_and_chat.sql`](supabase/migrations/002_preparation_and_chat.sql) for chat history and preparation and [`003_repair_signup_profiles.sql`](supabase/migrations/003_repair_signup_profiles.sql) for reliable signup profile creation. Migration 003 also creates missing profile rows for existing Auth users; it preserves existing profiles and never changes opportunities.
 
-Do **not** run `supabase/schema.sql` or migration `001_add_auth.sql` against production. The schema is for a fresh database only and refuses existing tracker tables; migration 001 is disabled. For a new installation, run the schema first, then migration 002. Migration 002 is transactional and intended to run once; a repeat run fails and rolls back without deleting records.
+Do **not** run `supabase/schema.sql` or migration `001_add_auth.sql` against production. The schema is for a fresh database only and refuses existing tracker tables; migration 001 is disabled. For a new installation, run the schema first, then migration 002. Migration 002 is transactional and intended to run once; migration 003 is transactional and safe to repeat.
 
 1. Before rollout, export opportunities and take a database backup using your Supabase backup process. Verify the opportunity count and that the backup is usable. No backup is automatically taken by this code change.
-2. Test migration 002 on a separate Supabase test project, then apply it once through the Supabase SQL Editor on the existing project. Verify your opportunity count and sample records are unchanged. Both new tables have owner-only RLS and no client delete permission. Linked opportunities must belong to the same user. The code push does not apply SQL automatically.
+2. Test migrations 002 and 003 on a separate Supabase test project, then apply them through the Supabase SQL Editor on the existing project. Verify your opportunity count and sample records are unchanged. Both new tables have owner-only RLS and no client delete permission. Linked opportunities must belong to the same user. The code push does not apply SQL automatically.
 3. Verify the deployed `opportunities` and `profiles` tables have the owner-only RLS policies expected by this repository. The frontend's `user_id` filters are not a substitute for database authorization.
 4. Configure these **server-only** Vercel environment variables:
 

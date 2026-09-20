@@ -162,8 +162,63 @@ try {
     await db.query('SELECT * FROM public.opportunities ORDER BY id'),
     before
   )
+  // Reproduce the legacy signup failure under the Auth schema search path.
+  await db.exec(`DELETE FROM public.profiles WHERE id='${owner}';
+    CREATE OR REPLACE FUNCTION public.handle_new_user() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $$ BEGIN INSERT INTO profiles(id,email) VALUES(NEW.id,NEW.email); RETURN NEW; END; $$;
+    ALTER FUNCTION public.handle_new_user() RESET ALL;
+    SET search_path = auth;`)
+  const newUser = '55555555-5555-4555-8555-555555555555'
+  await assert.rejects(
+    db.query('INSERT INTO auth.users(id,email) VALUES($1,$2)', [
+      newUser,
+      'signup@example.com'
+    ]),
+    /relation "profiles" does not exist/
+  )
+  await db.exec('SET search_path = public;')
+  const preservedProfile = await db.query(
+    'SELECT * FROM public.profiles WHERE id=$1',
+    [other]
+  )
+  const signupRepair = await readFile(
+    'supabase/migrations/003_repair_signup_profiles.sql',
+    'utf8'
+  )
+  await db.exec(signupRepair)
+  assert.deepEqual(
+    await db.query('SELECT * FROM public.profiles WHERE id=$1', [other]),
+    preservedProfile
+  )
+  assert.equal(
+    (await db.query('SELECT email FROM public.profiles WHERE id=$1', [owner]))
+      .rows[0].email,
+    'one@example.com'
+  )
+  await db.exec('SET search_path = auth;')
+  await db.query('INSERT INTO auth.users(id,email) VALUES($1,$2)', [
+    newUser,
+    'signup@example.com'
+  ])
+  assert.equal(
+    (await db.query('SELECT email FROM public.profiles WHERE id=$1', [newUser]))
+      .rows[0].email,
+    'signup@example.com'
+  )
+  await db.exec('SET search_path = public;')
+  const profilesAfter = await db.query(
+    'SELECT * FROM public.profiles ORDER BY id'
+  )
+  await db.exec(signupRepair)
+  assert.deepEqual(
+    await db.query('SELECT * FROM public.profiles ORDER BY id'),
+    profilesAfter
+  )
+  assert.deepEqual(
+    await db.query('SELECT * FROM public.opportunities ORDER BY id'),
+    before
+  )
   console.log(
-    'PASS: additive migration, preserved opportunities, owner RLS, private links, validation, no deletes, stale-write protection, repeat-run rollback.'
+    'PASS: reproduced and repaired signup search_path failure, preserved profiles/backfilled missing profiles, additive migration, preserved opportunities, owner RLS, private links, validation, no deletes, stale-write protection, repeat-run rollback.'
   )
 } catch (error) {
   console.error(error.message)

@@ -20,10 +20,15 @@ export default async function handler(
     res.setHeader('Allow', 'POST')
     return send(405, { error: 'Use POST.' })
   }
-  const { GEMINI_API_KEY, GEMINI_MODEL, AI_ALLOWED_USER_ID } = process.env
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
-  const key =
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY?.trim()
+  const GEMINI_MODEL = process.env.GEMINI_MODEL?.trim()
+  const AI_ALLOWED_USER_ID = process.env.AI_ALLOWED_USER_ID?.trim()
+  const url = (
+    process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+  )?.trim()
+  const key = (
     process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
+  )?.trim()
   if (!GEMINI_API_KEY || !GEMINI_MODEL || !AI_ALLOWED_USER_ID || !url || !key)
     return send(503, {
       error:
@@ -31,6 +36,16 @@ export default async function handler(
     })
   if (!/^[a-zA-Z0-9._-]+$/.test(GEMINI_MODEL))
     return send(503, { error: 'The configured AI model is invalid.' })
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol !== 'https:' || parsed.username || parsed.password)
+      throw new Error('Invalid API URL')
+  } catch {
+    return send(503, {
+      error:
+        'Configure the Supabase HTTPS project URL for the assistant, not the database connection string.'
+    })
+  }
   const bearer = req.headers.authorization
   if (!bearer?.startsWith('Bearer ') || bearer.length > 8192)
     return send(401, { error: 'Please sign in to use the assistant.' })

@@ -29,6 +29,10 @@ test('AI endpoint enforces configuration, auth, owner, validation and hides prov
     assert.ok(
       String(url).startsWith('https://generativelanguage.googleapis.com/')
     )
+    assert.equal(
+      new Headers(init?.headers).get('x-goog-api-key'),
+      'SERVER_SECRET'
+    )
     calls++
     lastPrompt = String(init?.body)
     return response(
@@ -90,6 +94,15 @@ test('AI endpoint enforces configuration, auth, owner, validation and hides prov
       { prompt: 'valid', json: 'true' }
     ])
       assert.equal((await run(body)).status, 400)
+    process.env.SUPABASE_URL = 'postgresql://invalid.invalid/database'
+    assert.equal((await run()).status, 503)
+    Object.assign(process.env, {
+      SUPABASE_URL: ' https://test.invalid ',
+      SUPABASE_ANON_KEY: ' public-test-key ',
+      GEMINI_API_KEY: ' SERVER_SECRET ',
+      GEMINI_MODEL: ' gemini-test-model ',
+      AI_ALLOWED_USER_ID: ` ${owner} `
+    })
     assert.equal(calls, 0)
     const good = await run({ prompt: 'Use the supplied details', json: true })
     assert.equal(good.status, 200)
