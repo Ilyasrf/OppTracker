@@ -6,6 +6,24 @@
   font-display: swap;
   font-weight: 400 700;
 }
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/space-grotesk-regular.otf') format('opentype');
+  font-display: swap;
+  font-weight: 400;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/space-grotesk-medium.otf') format('opentype');
+  font-display: swap;
+  font-weight: 500 600;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/space-grotesk-bold.otf') format('opentype');
+  font-display: swap;
+  font-weight: 700 900;
+}
 @theme {
   --color-dark: #f5f4ee;
   --color-dark-card: #fffef9;
@@ -30,13 +48,18 @@
 }
 
 :root {
-  font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Space Grotesk', 'Trebuchet MS', system-ui, sans-serif;
   color: var(--color-ink);
   background: var(--color-dark);
+  color-scheme: light;
   font-synthesis: none;
 }
 * {
   box-sizing: border-box;
+}
+::selection {
+  background: #f0df72;
+  color: #202720;
 }
 body {
   margin: 0;
@@ -83,6 +106,37 @@ textarea {
   padding: 0.7rem 0.85rem;
   min-width: 0;
 }
+select {
+  appearance: none;
+  padding-right: 2.65rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23272a27' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  background-size: 1rem;
+}
+select:hover {
+  border-color: #65725d;
+  background-color: #f8f6ea;
+}
+select:open {
+  border-color: #275e4b;
+  background-color: #f1f5ea;
+}
+select option,
+select optgroup {
+  font-family: 'Space Grotesk', 'Trebuchet MS', system-ui, sans-serif;
+  background: #fffef9;
+  color: #272a27;
+}
+select option:checked {
+  background: #dce8d5;
+  color: #214a3a;
+  font-weight: 600;
+}
+select:disabled {
+  cursor: not-allowed;
+  background-color: #eeeee8;
+}
 input::placeholder,
 textarea::placeholder {
   color: #777c71;
@@ -90,11 +144,17 @@ textarea::placeholder {
 label {
   font-size: 0.875rem;
   font-weight: 600;
+  letter-spacing: -0.012em;
 }
 input,
 select,
 textarea {
   font-weight: 400;
+  caret-color: #275e4b;
+}
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: #275e4b;
 }
 textarea {
   resize: vertical;
@@ -534,6 +594,16 @@ h2 {
   display: block;
   width: 100%;
   margin-top: 8px;
+}
+.form-grid > label {
+  font-size: 0.82rem;
+  letter-spacing: 0.005em;
+}
+.form-grid > label > input,
+.form-grid > label > select,
+.form-grid > label > textarea {
+  font-size: 0.93rem;
+  letter-spacing: -0.015em;
 }
 .field-hint {
   display: block;
