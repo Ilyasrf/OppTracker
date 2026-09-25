@@ -46,7 +46,7 @@ export default function Dashboard() {
           </p>
         </div>
         <Link className="button primary" to="/opportunities/new">
-          <span aria-hidden="true">＋</span> Add an opportunity
+          Add an opportunity
         </Link>
       </header>
       <div className="dashboard-grid">
@@ -54,7 +54,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between gap-3">
             <p className="eyebrow">UP NEXT / APPLICATION DEADLINE</p>
             <span className="handwritten -rotate-6 text-2xl">
-              you've got this ↙
+              you've got this
             </span>
           </div>
           {next ? (
@@ -69,7 +69,7 @@ export default function Dashboard() {
               </p>
               <div className="mt-7 flex flex-wrap items-center gap-4">
                 <Link to={`/opportunities/${next.id}`} className="button ink">
-                  Open application <span aria-hidden="true">↗</span>
+                  Open application
                 </Link>
                 <span className="text-sm">One step closer.</span>
               </div>
@@ -87,7 +87,7 @@ export default function Dashboard() {
                   : 'Save a fellowship, internship, or job. Give it a deadline. Make it happen.'}
               </p>
               <Link to="/opportunities/new" className="button ink mt-7">
-                Save a possibility ↗
+                Save a possibility
               </Link>
             </>
           )}
@@ -125,7 +125,7 @@ export default function Dashboard() {
           <div className="section-heading">
             <h2>Coming up</h2>
             <Link to="/opportunities?view=upcoming" className="text-link">
-              See all ↗
+              See all
             </Link>
           </div>
           <p className="mb-4 text-sm text-gray-500">
@@ -167,7 +167,7 @@ export default function Dashboard() {
                   setCalendarSaved(true)
                 }}
               >
-                ↓ Add deadlines to my calendar
+                Add deadlines to my calendar
               </button>
               <p>
                 Import the file into your calendar and check its alerts.
@@ -207,7 +207,7 @@ export default function Dashboard() {
             </p>
           )}
           <Link to="/opportunities" className="text-link mt-5 inline-block">
-            Open the whole notebook ↗
+            Open the whole notebook
           </Link>
         </section>
       </div>
@@ -225,7 +225,7 @@ export default function Dashboard() {
             </p>
           </div>
           <Link className="button" to="/opportunities?view=overdue">
-            Review passed deadlines ↗
+            Review passed deadlines
           </Link>
         </section>
       )}

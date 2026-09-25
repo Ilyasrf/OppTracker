@@ -300,7 +300,7 @@ export default function Preparation() {
                   : 'Start something good.'}
               </h2>
               <span className="handwritten text-2xl">
-                {dirty ? 'draft in progress' : 'saved ✓'}
+                {dirty ? 'draft in progress' : 'saved'}
               </span>
             </div>
             {notice && (
@@ -414,7 +414,7 @@ export default function Preparation() {
                       className="text-link block mt-2"
                       to={`/opportunities/${draft.opportunity_id}`}
                     >
-                      Open linked opportunity ↗
+                      Open linked opportunity
                     </Link>
                   )}
                 </label>
@@ -499,7 +499,7 @@ export default function Preparation() {
                         })
                       }
                     >
-                      ×
+                      Remove
                     </button>
                   </div>
                 ))}
@@ -547,7 +547,7 @@ export default function Preparation() {
                               target="_blank"
                               rel="noopener noreferrer"
                             >
-                              {line.trim()} ↗
+                              {line.trim()}
                             </a>
                           </li>
                         )
@@ -588,7 +588,7 @@ export default function Preparation() {
                         )
                     }}
                   >
-                    Prepare with AI ↗
+                    Prepare with AI
                   </Link>
                 )}
               </div>
@@ -617,7 +617,7 @@ export default function Preparation() {
               onClick={create}
               disabled={busy || loading || !!error}
             >
-              Start your first step ↗
+              Start your first step
             </button>
           </div>
         )}

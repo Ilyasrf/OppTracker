@@ -202,6 +202,7 @@ h2 {
   white-space: nowrap;
 }
 .brand-mark {
+  position: relative;
   border: 2px solid #272a27;
   background: #f6e889;
   display: inline-flex;
@@ -213,6 +214,24 @@ h2 {
   border-radius: 4px 8px 4px 4px;
   box-shadow: 2px 2px 0 #272a27;
   transform: rotate(-5deg);
+}
+.brand-mark::before {
+  content: '';
+  position: absolute;
+  width: 15px;
+  height: 2px;
+  background: #272a27;
+  transform: rotate(-45deg);
+}
+.brand-mark::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  top: 8px;
+  right: 7px;
+  border-top: 2px solid #272a27;
+  border-right: 2px solid #272a27;
 }
 .brand-dot {
   width: 6px;
@@ -573,10 +592,6 @@ h2 {
   align-items: flex-end;
   gap: 9px;
 }
-.row-arrow {
-  font-size: 24px;
-  color: #718363;
-}
 .opportunity-row:hover h2 {
   color: #275e4b;
 }
@@ -761,9 +776,6 @@ h2 {
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
-  }
-  .row-arrow {
-    display: none;
   }
   .form-grid,
   .detail-grid {

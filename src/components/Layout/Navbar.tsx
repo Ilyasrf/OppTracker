@@ -10,9 +10,7 @@ export default function Navbar() {
     <header className="site-header">
       <div className="nav-shell">
         <NavLink to="/" className="brand" aria-label="OppNote home">
-          <span className="brand-mark" aria-hidden="true">
-            ↗
-          </span>
+          <span className="brand-mark" aria-hidden="true" />
           opp<span className="font-normal">note</span>
           <span className="brand-dot" />
         </NavLink>
@@ -51,7 +49,7 @@ export default function Navbar() {
             }
           }}
         >
-          {busy ? 'Signing out…' : 'Sign out'} ↗
+          {busy ? 'Signing out…' : 'Sign out'}
         </button>
       </div>
       {error && (

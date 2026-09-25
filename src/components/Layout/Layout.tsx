@@ -12,9 +12,7 @@ export default function Layout() {
       </main>
       <footer className="site-footer">
         <span>OppNote / A little more organized.</span>
-        <span className="handwritten text-xl">
-          make room for what’s next ↗
-        </span>
+        <span className="handwritten text-xl">make room for what’s next</span>
       </footer>
     </div>
   )

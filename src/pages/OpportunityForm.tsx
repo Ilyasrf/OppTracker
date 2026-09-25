@@ -273,7 +273,7 @@ export default function OpportunityForm() {
         )}
         <div className="flex flex-wrap gap-3">
           <button className="button primary" disabled={saving}>
-            {saving ? 'Saving…' : id ? 'Save changes' : 'Save opportunity'} ↗
+            {saving ? 'Saving…' : id ? 'Save changes' : 'Save opportunity'}
           </button>
           <button
             className="button"

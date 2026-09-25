@@ -14,9 +14,7 @@ export default function AuthLayout({
     <div className="auth-shell">
       <header className="auth-header">
         <Link className="brand" to="/" aria-label="OppNote home">
-          <span className="brand-mark" aria-hidden="true">
-            ↗
-          </span>
+          <span className="brand-mark" aria-hidden="true" />
           opp<span className="font-normal">note</span>
           <span className="brand-dot" />
         </Link>
@@ -36,14 +34,14 @@ export default function AuthLayout({
             <p className="handwritten">A page for every possibility.</p>
             <ul>
               <li>
-                <span aria-hidden="true">↗</span>
+                <span aria-hidden="true">01</span>
                 <div>
                   <strong>Apply with a plan</strong>
                   <p>Keep opportunities, deadlines, and follow-ups together.</p>
                 </div>
               </li>
               <li>
-                <span aria-hidden="true">✓</span>
+                <span aria-hidden="true">02</span>
                 <div>
                   <strong>Prepare a little each day</strong>
                   <p>
@@ -52,7 +50,7 @@ export default function AuthLayout({
                 </div>
               </li>
               <li>
-                <span aria-hidden="true">✎</span>
+                <span aria-hidden="true">03</span>
                 <div>
                   <strong>Pick up the conversation</strong>
                   <p>Return to your saved ideas and AI conversations.</p>
@@ -73,7 +71,7 @@ export default function AuthLayout({
       </main>
       <footer className="auth-footer">
         <span>Opportunities. Preparation. Progress.</span>
-        <span className="handwritten">make room for what’s next ↗</span>
+        <span className="handwritten">make room for what’s next</span>
       </footer>
     </div>
   )

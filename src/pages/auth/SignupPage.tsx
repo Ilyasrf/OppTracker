@@ -95,7 +95,7 @@ export default function SignupPage() {
               ? 'Creating your account…'
               : loading
                 ? 'Checking your session…'
-                : 'Create account ↗'}
+                : 'Create account'}
           </button>
         </fieldset>
         <p className="auth-switch">

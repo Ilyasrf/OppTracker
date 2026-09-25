@@ -168,7 +168,7 @@ export default function SmartChat() {
       >
         <div className="section-heading">
           <h2>Conversations</h2>
-          <span className="handwritten text-2xl">↙ saved here</span>
+          <span className="handwritten text-2xl">saved here</span>
         </div>
         <button
           className="button primary w-full"
@@ -401,7 +401,7 @@ export default function SmartChat() {
               messages.length >= 199
             }
           >
-            Send ↗
+            Send
           </button>
         </form>
         <p className="field-hint">

@@ -98,7 +98,7 @@ export default function OpportunityAnalyzer() {
               })
             }
           >
-            Review & save opportunity ↗
+            Review & save opportunity
           </button>
           <div className="rounded-xl border border-dark-border bg-dark-card p-6 backdrop-blur-sm">
             <div className="flex items-start justify-between">

@@ -64,7 +64,7 @@ export default function OpportunitiesList() {
           </p>
         </div>
         <Link className="button primary" to="/opportunities/new">
-          ＋ Add an opportunity
+          Add an opportunity
         </Link>
       </header>
       <div className="flex flex-wrap items-center gap-3">
@@ -105,7 +105,7 @@ export default function OpportunitiesList() {
               )
             }}
           >
-            ↓ Export backup
+            Export backup
           </button>
           <button
             className="text-link"
@@ -128,7 +128,7 @@ export default function OpportunitiesList() {
               )
             }}
           >
-            ↓ Calendar
+            Calendar
           </button>
         </div>
       </div>
@@ -221,9 +221,6 @@ export default function OpportunitiesList() {
                   </span>
                 )}
               </div>
-              <span className="row-arrow" aria-hidden="true">
-                ↗
-              </span>
             </Link>
           ))
         ) : (

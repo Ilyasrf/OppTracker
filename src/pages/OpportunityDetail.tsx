@@ -56,7 +56,7 @@ export default function OpportunityDetail() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <Link className="text-link" to="/opportunities">
-        ← Back to your notebook
+        Back to your notebook
       </Link>
       <header className="page-heading">
         <div>
@@ -67,7 +67,7 @@ export default function OpportunityDetail() {
           <h1 className="detail-title">{opp.title}</h1>
         </div>
         <Link className="button" to={`/opportunities/${opp.id}/edit`}>
-          Edit details ↗
+          Edit details
         </Link>
       </header>
       <section className="paper-panel">
@@ -108,7 +108,7 @@ export default function OpportunityDetail() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            Open official website ↗
+            Open official website
           </a>
         )}
         {opp.status === 'need_to_apply' &&
@@ -127,7 +127,7 @@ export default function OpportunityDetail() {
                 )
               }}
             >
-              ↓ Calendar reminder
+              Calendar reminder
             </button>
           )}
       </section>

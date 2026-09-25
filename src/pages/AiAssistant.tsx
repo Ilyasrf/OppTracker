@@ -5,10 +5,10 @@ import ScamDetector from '../components/ai/ScamDetector'
 import SmartChat from '../components/ai/SmartChat'
 
 const tabs = [
-  { id: 'analyze', label: 'Capture a draft', icon: '🔍' },
-  { id: 'cover', label: 'Cover Letter', icon: '📝' },
-  { id: 'chat', label: 'Smart Chat', icon: '💬' },
-  { id: 'scam', label: 'Risk review', icon: '🛡️' }
+  { id: 'analyze', label: 'Capture a draft' },
+  { id: 'cover', label: 'Cover Letter' },
+  { id: 'chat', label: 'Smart Chat' },
+  { id: 'scam', label: 'Risk review' }
 ] as const
 
 type TabId = (typeof tabs)[number]['id']
@@ -29,18 +29,16 @@ export default function AiAssistant() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {tabs.map((tab) => (
+        {tabs.map((tab, index) => (
           <button
             key={tab.id}
             aria-pressed={activeTab === tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
-              activeTab === tab.id
-                ? 'bg-accent text-paper shadow-lg shadow-accent/20'
-                : 'border border-dark-border bg-dark-card text-gray-400 hover:text-ink hover:border-accent/30'
-            }`}
+            className={`filter-tab flex items-center gap-2 ${activeTab === tab.id ? 'selected' : ''}`}
           >
-            <span>{tab.icon}</span>
+            <span className="font-mono text-[10px]" aria-hidden="true">
+              {String(index + 1).padStart(2, '0')}
+            </span>
             {tab.label}
           </button>
         ))}

@@ -240,7 +240,11 @@ export default function ScamDetector() {
                       key={i}
                       className="flex items-start gap-2 text-sm text-green-300"
                     >
-                      <span className="mt-0.5 text-green-400">✓</span> {f}
+                      <span
+                        aria-hidden="true"
+                        className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-green-400"
+                      />{' '}
+                      {f}
                     </li>
                   ))}
                 </ul>
@@ -258,7 +262,11 @@ export default function ScamDetector() {
                       key={i}
                       className="flex items-start gap-2 text-sm text-red-300"
                     >
-                      <span className="mt-0.5 text-red-400">⚠</span> {f}
+                      <span
+                        aria-hidden="true"
+                        className="mt-1.5 h-2 w-2 shrink-0 rotate-45 rounded-[1px] bg-red-400"
+                      />{' '}
+                      {f}
                     </li>
                   ))}
                 </ul>

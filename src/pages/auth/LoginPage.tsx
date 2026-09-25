@@ -87,7 +87,7 @@ export default function LoginPage() {
               ? 'Signing in…'
               : loading
                 ? 'Checking your session…'
-                : 'Sign in ↗'}
+                : 'Sign in'}
           </button>
         </fieldset>
         <p className="auth-switch">
