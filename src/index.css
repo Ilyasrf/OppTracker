@@ -532,6 +532,154 @@ h2 {
   color: #fffef9;
   border-color: #2b5543;
 }
+.ai-workbench {
+  --ai-pencil: #343a32;
+  --ai-rule: #aeb8a3;
+}
+.ai-workbench-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 32px;
+  margin-bottom: 30px;
+}
+.ai-workbench-heading > div {
+  max-width: 890px;
+}
+.ai-margin-note {
+  flex: 0 0 auto;
+  margin: 0 18px 9px 0;
+  color: #53674d;
+  font-size: 24px;
+  transform: rotate(-4deg);
+}
+.ai-margin-note::after {
+  content: '';
+  display: block;
+  width: 86%;
+  height: 7px;
+  margin: -2px auto 0;
+  border-bottom: 2px solid #d1b840;
+  border-radius: 50%;
+  transform: rotate(1deg);
+}
+.ai-tool-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+  margin-bottom: 18px;
+}
+.ai-tool-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 82px;
+  padding: 13px 14px;
+  text-align: left;
+  color: var(--ai-pencil);
+  background: #fffef9;
+  border: 1.5px solid #87917e;
+  border-radius: 6px 3px 8px 4px;
+  box-shadow: 2px 3px 0 #d9ded2;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+.ai-tool-tab:nth-child(2) {
+  border-radius: 3px 8px 4px 7px;
+  transform: rotate(0.35deg);
+}
+.ai-tool-tab:nth-child(3) {
+  border-radius: 8px 4px 7px 3px;
+  transform: rotate(-0.35deg);
+}
+.ai-tool-tab:hover {
+  transform: translateY(-3px) rotate(-0.4deg);
+  box-shadow: 3px 5px 0 #cbd3c3;
+}
+.ai-tool-tab[aria-selected='true'] {
+  background: #f4e780;
+  border-color: #30362e;
+  box-shadow: 3px 4px 0 #30362e;
+  transform: translateY(-3px) rotate(-0.7deg);
+}
+.ai-tool-tab[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  right: 14px;
+  bottom: 8px;
+  width: 38px;
+  height: 7px;
+  border-bottom: 2px solid #526247;
+  border-radius: 50%;
+  transform: rotate(-3deg);
+}
+.ai-tool-tab > span:last-child {
+  min-width: 0;
+}
+.ai-tool-tab strong,
+.ai-tool-tab small {
+  display: block;
+}
+.ai-tool-tab strong {
+  font-size: 14px;
+  line-height: 1.25;
+}
+.ai-tool-tab small {
+  margin-top: 4px;
+  color: #687062;
+  font-size: 10px;
+  line-height: 1.35;
+}
+.ai-tool-sketch {
+  display: grid;
+  place-items: center;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  color: #2f4d3f;
+  background: #e7ecdf;
+  border: 1px solid #8b9781;
+  border-radius: 47% 42% 45% 39%;
+  transform: rotate(-3deg);
+}
+.ai-tool-sketch svg {
+  width: 25px;
+  height: 25px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ai-tool-sheet {
+  position: relative;
+  min-height: 400px;
+  padding: 30px;
+  background: #fffef9d9;
+  border: 1.5px solid var(--ai-rule);
+  border-radius: 5px 9px 4px 7px;
+  box-shadow: 4px 5px 0 #dde2d6;
+}
+.ai-tool-sheet::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  top: -10px;
+  left: calc(50% - 39px);
+  width: 78px;
+  height: 20px;
+  background: #dfe2c9d9;
+  border-inline: 1px dashed #adb59f;
+  transform: rotate(-2deg);
+  pointer-events: none;
+}
+.ai-tool-sheet .notebook-workspace .paper-panel {
+  box-shadow: 2px 3px 0 #e0e4d9;
+}
 .filter-bar {
   display: flex;
   flex-wrap: wrap;
@@ -920,6 +1068,15 @@ progress {
   margin-bottom: 9px;
 }
 @media (max-width: 900px) {
+  .ai-workbench-heading {
+    align-items: flex-start;
+  }
+  .ai-margin-note {
+    display: none;
+  }
+  .ai-tool-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .notebook-workspace {
     grid-template-columns: 1fr;
   }
@@ -931,6 +1088,35 @@ progress {
   }
   .chat-workspace {
     min-height: 450px;
+  }
+}
+@media (max-width: 560px) {
+  .ai-workbench-heading {
+    margin-bottom: 23px;
+  }
+  .ai-tool-tabs {
+    gap: 9px;
+  }
+  .ai-tool-tab {
+    min-height: 76px;
+    padding: 11px;
+    gap: 9px;
+  }
+  .ai-tool-tab small {
+    display: none;
+  }
+  .ai-tool-sketch {
+    flex-basis: 34px;
+    width: 34px;
+    height: 34px;
+  }
+  .ai-tool-sketch svg {
+    width: 22px;
+    height: 22px;
+  }
+  .ai-tool-sheet {
+    margin-inline: -10px;
+    padding: 22px 14px;
   }
 }
 progress {
