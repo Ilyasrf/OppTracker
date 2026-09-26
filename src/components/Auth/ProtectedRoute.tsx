@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { Fragment } from 'react'
 
 export default function ProtectedRoute({
   children
@@ -29,5 +30,6 @@ export default function ProtectedRoute({
     )
   }
 
-  return <>{children}</>
+  // A cross-tab account switch must not carry private form/chat state forward.
+  return <Fragment key={user.id}>{children}</Fragment>
 }

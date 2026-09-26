@@ -82,9 +82,15 @@ export default async function handler(
         return send(400, { error: 'Invalid JSON request.' })
       }
     }
+    // Vercel may parse JSON before invoking this handler. Apply the same byte
+    // limit to that path, including multibyte prompts and unexpected fields.
+    if (Buffer.byteLength(JSON.stringify(body) ?? '') > 100000)
+      return send(413, { error: 'This request is too large.' })
     if (
       !body ||
       typeof body !== 'object' ||
+      Array.isArray(body) ||
+      Object.keys(body).some((key) => !['prompt', 'json'].includes(key)) ||
       !('prompt' in body) ||
       typeof body.prompt !== 'string' ||
       !body.prompt.trim() ||

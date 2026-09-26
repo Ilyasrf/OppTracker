@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, Navigate, useLocation } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import AuthLayout, { PasswordField } from '../../components/Auth/AuthLayout'
 
@@ -90,16 +90,6 @@ export default function LoginPage() {
                 : 'Sign in'}
           </button>
         </fieldset>
-        <p className="auth-switch">
-          New to OppNote?{' '}
-          <Link
-            to="/signup"
-            state={{ from: destination }}
-            className="text-link"
-          >
-            Create an account
-          </Link>
-        </p>
       </form>
     </AuthLayout>
   )

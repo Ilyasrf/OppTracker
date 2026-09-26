@@ -91,9 +91,16 @@ test('AI endpoint enforces configuration, auth, owner, validation and hides prov
       {},
       { prompt: '' },
       { prompt: 'x'.repeat(40001) },
+      { prompt: 'valid', unexpected: 'field' },
       { prompt: 'valid', json: 'true' }
     ])
       assert.equal((await run(body)).status, 400)
+    for (const oversized of [
+      { prompt: '界'.repeat(34000) },
+      { prompt: 'valid', extra: 'x'.repeat(100001) },
+      JSON.stringify({ prompt: 'x'.repeat(100001) })
+    ])
+      assert.equal((await run(oversized)).status, 413)
     process.env.SUPABASE_URL = 'postgresql://invalid.invalid/database'
     assert.equal((await run()).status, 503)
     Object.assign(process.env, {

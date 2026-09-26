@@ -8,10 +8,6 @@ interface AuthContextType {
   session: Session | null
   loading: boolean
   signOutWarning: string
-  signUp: (
-    email: string,
-    password: string
-  ) => Promise<{ error?: string; signedIn?: boolean }>
   signIn: (email: string, password: string) => Promise<{ error?: string }>
   signOut: () => Promise<void>
 }
@@ -58,18 +54,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const signUp = async (email: string, password: string) => {
-    setSignOutWarning('')
-    try {
-      const { data, error } = await supabase.auth.signUp({ email, password })
-      return error
-        ? { error: error.message }
-        : { signedIn: Boolean(data.session) }
-    } catch {
-      return { error: 'Could not connect. Please try again.' }
-    }
-  }
-
   const signIn = async (email: string, password: string) => {
     setSignOutWarning('')
     try {
@@ -104,7 +88,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         loading,
         signOutWarning,
-        signUp,
         signIn,
         signOut
       }}

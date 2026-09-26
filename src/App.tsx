@@ -1,5 +1,5 @@
 import { isSupabaseConfigured } from './lib/supabase'
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './components/Auth/ProtectedRoute'
 import Layout from './components/Layout/Layout'
@@ -12,7 +12,6 @@ import { lazy, Suspense } from 'react'
 const AiAssistant = lazy(() => import('./pages/AiAssistant'))
 const Preparation = lazy(() => import('./pages/Preparation'))
 import LoginPage from './pages/auth/LoginPage'
-import SignupPage from './pages/auth/SignupPage'
 import AuthCallback from './pages/auth/AuthCallback'
 
 export default function App() {
@@ -32,7 +31,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/signup" element={<Navigate to="/login" replace />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route
             element={
